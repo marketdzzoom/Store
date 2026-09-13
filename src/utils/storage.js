@@ -31,9 +31,9 @@ export const DEFAULT_SPECIAL_OFFER = {
 export function getStoredProducts() {
   try {
     const data = localStorage.getItem(PRODUCTS_KEY);
-    if (data) {
+    if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }

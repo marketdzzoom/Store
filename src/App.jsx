@@ -209,6 +209,11 @@ export default function App() {
     saveProducts(updated);
   };
 
+  const handleClearAllProducts = () => {
+    setProducts([]);
+    saveProducts([]);
+  };
+
   const handleResetProducts = () => {
     const initial = resetStoredProducts();
     setProducts(initial);
@@ -397,6 +402,7 @@ export default function App() {
           products={products}
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
+          onClearAllProducts={handleClearAllProducts}
           onResetProducts={handleResetProducts}
           specialOffer={specialOffer}
           onUpdateSpecialOffer={handleUpdateSpecialOffer}

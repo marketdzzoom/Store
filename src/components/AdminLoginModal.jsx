@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, Key, ShieldCheck, AlertCircle, Check, Clock, ShieldAlert } from 'lucide-react';
+import { X, Lock, Key, ShieldCheck, AlertCircle, Check, Clock, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { verifyAdminPin, changeAdminPin, getLockoutStatus } from '../utils/auth';
 import { verifyAdminGeoLocation } from '../utils/geoSecurity';
 
 export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [lockoutInfo, setLockoutInfo] = useState(getLockoutStatus);
@@ -17,6 +18,7 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
+  const [showChangePin, setShowChangePin] = useState(false);
   const [changeSuccess, setChangeSuccess] = useState(false);
 
   useEffect(() => {
@@ -206,16 +208,27 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPin ? "text" : "password"}
                   disabled={!isAuthorized || lockoutInfo.isLocked || isVerifying || isCheckingSecurity}
                   value={pin}
                   onChange={(e) => { setPin(e.target.value); setError(''); }}
-                  placeholder="••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold text-center tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                  placeholder="Ex: DZ2026"
+                  className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold text-center tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                   autoFocus
                   maxLength={12}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  aria-label={showPin ? "Masquer le code PIN" : "Afficher le code PIN"}
+                >
+                  {showPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
@@ -256,6 +269,9 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
                 value={currentPinInput}
                 onChange={(e) => setCurrentPinInput(e.target.value)}
                 placeholder="PIN actuel"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
               />
             </div>
@@ -269,6 +285,9 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
                 value={newPinInput}
                 onChange={(e) => setNewPinInput(e.target.value)}
                 placeholder="Nouveau PIN"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
               />
             </div>
