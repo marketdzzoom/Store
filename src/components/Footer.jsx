@@ -48,7 +48,7 @@ export default function Footer({ onCategorySelect, storePhone, recipientEmail, o
           
           {/* Brand Info */}
           <div className="md:col-span-1 space-y-4">
-            <Logo />
+            <Logo isDarkBg={true} />
             <p className="text-xs text-slate-400 leading-relaxed">
               {t.footerAbout}
             </p>
