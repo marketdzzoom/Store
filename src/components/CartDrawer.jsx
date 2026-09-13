@@ -19,7 +19,13 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { WILAYAS } from '../data/wilayas';
-import { formatPrice, validateDZPhone } from '../utils/formatters';
+import { 
+  formatPrice, 
+  validateDZPhone, 
+  normalizeDZPhone, 
+  getDZPhoneCarrier, 
+  formatDZPhoneDisplay 
+} from '../utils/formatters';
 import { sendOrderNotification, generateWhatsAppOrderUrl } from '../utils/email';
 import { TRANSLATIONS } from '../data/translations';
 import { addOrderToStorage } from '../utils/storage';
@@ -51,6 +57,7 @@ export default function CartDrawer({
   const [selectedWilayaCode, setSelectedWilayaCode] = useState('16'); // Default 16 - Alger
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneBackup, setPhoneBackup] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -78,23 +85,43 @@ export default function CartDrawer({
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal + shippingFee;
 
-  // Validate form fields for Step 2 with strict Sanitization
+  // Validate form fields for Step 2 with strict Sanitization and Anti-Fake checks
   const validateForm = () => {
     const errs = {};
-    const cleanName = sanitizeText(fullName, 100);
+    const cleanName = sanitizeText(fullName, 100).trim();
     const cleanPhone = sanitizePhone(phone);
-    const cleanAddress = sanitizeText(address, 250);
+    const cleanPhoneBackup = sanitizePhone(phoneBackup);
+    const cleanAddress = sanitizeText(address, 250).trim();
 
-    if (!cleanName) {
-      errs.fullName = lang === 'ar' ? 'يرجى كتابة الاسم واللقب' : 'Le nom et prénom sont obligatoires.';
+    // 1. Nom & Prénom: Minimum 3 characters, must contain actual letters (Latin or Arabic), not only numbers/symbols
+    if (!cleanName || cleanName.length < 3 || !/[\p{L}]/u.test(cleanName)) {
+      errs.fullName = t.errFullName || (lang === 'ar' ? 'يرجى كتابة الاسم واللقب (3 أحرف على الأقل)' : 'Le nom et prénom sont obligatoires (au moins 3 lettres).');
     }
+
+    // 2. Téléphone principal: Mandatory, strictly 10 digits starting with 05/06/07 (or landlines), anti-fake sequence & repeating check
     if (!cleanPhone) {
       errs.phone = lang === 'ar' ? 'رقم الهاتف مطلوب لتأكيد الطلب' : 'Le numéro de téléphone est obligatoire.';
     } else if (!validateDZPhone(cleanPhone)) {
-      errs.phone = lang === 'ar' ? 'رقم غير صحيح (05/06/07 + 8 أرقام)' : 'Numéro invalide (05, 06 ou 07 + 8 chiffres).';
+      errs.phone = t.errPhone || (lang === 'ar' ? 'رقم هاتف جزائري غير صحيح أو تجريبي (05/06/07 + 8 أرقام)' : 'Numéro algérien invalide ou fictif (05, 06 ou 07 + 8 chiffres réels).');
     }
-    if (!cleanAddress) {
-      errs.address = lang === 'ar' ? 'يرجى تحديد البلدية والعنوان بالتفصيل' : 'La commune et adresse de livraison sont obligatoires.';
+
+    // 3. Téléphone secondaire (Optionnel): If provided, must also be a valid DZ number and different from primary
+    if (cleanPhoneBackup) {
+      if (!validateDZPhone(cleanPhoneBackup)) {
+        errs.phoneBackup = t.errPhoneBackup || (lang === 'ar' ? 'رقم الهاتف الثانوي غير صحيح (05/06/07 + 8 أرقام)' : 'Numéro secondaire invalide (05, 06 ou 07 + 8 chiffres réels).');
+      } else if (normalizeDZPhone(cleanPhoneBackup) === normalizeDZPhone(cleanPhone)) {
+        errs.phoneBackup = t.errPhoneBackupSame || (lang === 'ar' ? 'يجب أن يكون الرقم الثاني مختلفاً عن الرقم الأول' : 'Le numéro secondaire doit être différent du numéro principal.');
+      }
+    }
+
+    // 4. Wilaya: Mandatory
+    if (!selectedWilayaCode) {
+      errs.wilaya = t.errWilaya || (lang === 'ar' ? 'يرجى اختيار الولاية' : 'Veuillez sélectionner une wilaya.');
+    }
+
+    // 5. Commune & Adresse détaillée: Mandatory, minimum 5 characters
+    if (!cleanAddress || cleanAddress.length < 5) {
+      errs.address = t.errAddress || (lang === 'ar' ? 'يرجى إدخال البلدية والعنوان بالتفصيل (5 أحرف على الأقل)' : 'La commune et l\'adresse détaillée sont obligatoires (au moins 5 caractères).');
     }
 
     setErrors(errs);
@@ -131,11 +158,12 @@ export default function CartDrawer({
     setLoading(true);
 
     const sanitizedCustomer = {
-      fullName: sanitizeText(fullName, 100),
-      phone: sanitizePhone(phone),
+      fullName: sanitizeText(fullName, 100).trim(),
+      phone: formatDZPhoneDisplay(phone),
+      phoneBackup: phoneBackup ? formatDZPhoneDisplay(phoneBackup) : '',
       wilaya: currentWilaya.name,
-      address: sanitizeText(address, 250),
-      notes: sanitizeText(notes, 250)
+      address: sanitizeText(address, 250).trim(),
+      notes: sanitizeText(notes, 250).trim()
     };
 
     const orderData = {
@@ -162,6 +190,7 @@ export default function CartDrawer({
       
       setFullName('');
       setPhone('');
+      setPhoneBackup('');
       setAddress('');
       setNotes('');
       setErrors({});
@@ -175,12 +204,22 @@ export default function CartDrawer({
   const handleWhatsAppOrder = () => {
     if (cartItems.length === 0) return;
 
+    // If user is currently in Step 1 (cart review), navigate to Step 2 so customer information can be entered
+    if (checkoutStep === 1) {
+      setCheckoutStep(2);
+      return;
+    }
+
+    // On Step 2, strictly validate: fake orders cannot bypass validation via WhatsApp!
+    if (!validateForm()) return;
+
     const sanitizedCustomer = {
-      fullName: sanitizeText(fullName, 100) || 'Client Zoom Market',
-      phone: sanitizePhone(phone) || 'Non renseigné',
+      fullName: sanitizeText(fullName, 100).trim(),
+      phone: formatDZPhoneDisplay(phone),
+      phoneBackup: phoneBackup ? formatDZPhoneDisplay(phoneBackup) : '',
       wilaya: currentWilaya.name,
-      address: sanitizeText(address, 250) || 'À confirmer par WhatsApp',
-      notes: sanitizeText(notes, 250)
+      address: sanitizeText(address, 250).trim(),
+      notes: sanitizeText(notes, 250).trim()
     };
 
     const orderData = {
@@ -198,6 +237,12 @@ export default function CartDrawer({
     const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone);
     window.open(waUrl, '_blank');
   };
+
+  // Real-time Algerian carrier detection & phone validity
+  const phoneCarrier = getDZPhoneCarrier(phone);
+  const isPhoneValid = validateDZPhone(phone);
+  const backupCarrier = phoneBackup ? getDZPhoneCarrier(phoneBackup) : null;
+  const isBackupValid = phoneBackup ? validateDZPhone(phoneBackup) : false;
 
   if (!isOpen) return null;
 
@@ -458,6 +503,14 @@ export default function CartDrawer({
                     </div>
                   </div>
 
+                  {/* Anti-Fake Trust & Safety Notice */}
+                  <div className="p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed font-semibold">
+                      {t.antiFakeNotice}
+                    </p>
+                  </div>
+
                   <form onSubmit={handleSubmitOrder} className="space-y-3.5">
                     
                     {/* Anti-Bot Honeypot Hidden Input Field */}
@@ -484,45 +537,117 @@ export default function CartDrawer({
                           type="text"
                           maxLength={80}
                           value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
+                          }}
                           placeholder={t.fullNamePlaceholder}
                           className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                            errors.fullName ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'
+                            errors.fullName ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
                           } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
                         />
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                       {errors.fullName && (
                         <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3 h-3" /> {errors.fullName}
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.fullName}
                         </p>
                       )}
                     </div>
 
-                    {/* Téléphone */}
+                    {/* Téléphone Principal */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        {t.phone} <span className="text-brand-orange">*</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          {t.phone} <span className="text-brand-orange">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          {phoneCarrier && (
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${phoneCarrier.bg} ${phoneCarrier.color}`}>
+                              {phoneCarrier.name}
+                            </span>
+                          )}
+                          {isPhoneValid && (
+                            <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>{t.phoneConforme}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <div className="relative">
                         <input
                           type="tel"
-                          maxLength={20}
+                          maxLength={18}
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => {
+                            setPhone(e.target.value);
+                            if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+                          }}
                           placeholder={t.phonePlaceholder}
                           className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                            errors.phone ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'
+                            errors.phone 
+                              ? 'border-red-500 ring-1 ring-red-500/20' 
+                              : isPhoneValid 
+                              ? 'border-emerald-500 ring-1 ring-emerald-500/20' 
+                              : 'border-slate-200 dark:border-slate-700'
                           } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
                         />
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isPhoneValid ? 'text-emerald-500' : 'text-slate-400'}`} />
                       </div>
                       <p className="text-[10px] text-slate-400 mt-1">
                         {t.phoneHint}
                       </p>
                       {errors.phone && (
                         <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3 h-3" /> {errors.phone}
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phone}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Téléphone Secondaire (Optionnel) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          {t.phoneSecondary}
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          {backupCarrier && (
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${backupCarrier.bg} ${backupCarrier.color}`}>
+                              {backupCarrier.name}
+                            </span>
+                          )}
+                          {isBackupValid && (
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                              <span>{t.phoneConforme}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          maxLength={18}
+                          value={phoneBackup}
+                          onChange={(e) => {
+                            setPhoneBackup(e.target.value);
+                            if (errors.phoneBackup) setErrors((prev) => ({ ...prev, phoneBackup: undefined }));
+                          }}
+                          placeholder={t.phoneSecondaryPlaceholder}
+                          className={`w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
+                            errors.phoneBackup 
+                              ? 'border-red-500 ring-1 ring-red-500/20' 
+                              : isBackupValid 
+                              ? 'border-emerald-500' 
+                              : 'border-slate-200 dark:border-slate-700'
+                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
+                        />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                      {errors.phoneBackup && (
+                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phoneBackup}
                         </p>
                       )}
                     </div>
@@ -535,8 +660,13 @@ export default function CartDrawer({
                       <div className="relative">
                         <select
                           value={selectedWilayaCode}
-                          onChange={(e) => setSelectedWilayaCode(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none appearance-none cursor-pointer"
+                          onChange={(e) => {
+                            setSelectedWilayaCode(e.target.value);
+                            if (errors.wilaya) setErrors((prev) => ({ ...prev, wilaya: undefined }));
+                          }}
+                          className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold border ${
+                            errors.wilaya ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
+                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none appearance-none cursor-pointer`}
                         >
                           {WILAYAS.map((w) => (
                             <option key={w.code} value={w.code} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
@@ -546,6 +676,11 @@ export default function CartDrawer({
                         </select>
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-orange" />
                       </div>
+                      {errors.wilaya && (
+                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.wilaya}
+                        </p>
+                      )}
                     </div>
 
                     {/* Commune & Adresse */}
@@ -556,16 +691,19 @@ export default function CartDrawer({
                       <textarea
                         maxLength={250}
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
+                        }}
                         rows={2}
                         placeholder={t.addressPlaceholder}
                         className={`w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                          errors.address ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'
+                          errors.address ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
                         } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
                       />
                       {errors.address && (
                         <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3 h-3" /> {errors.address}
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.address}
                         </p>
                       )}
                     </div>

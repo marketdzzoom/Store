@@ -19,7 +19,7 @@ export async function sendOrderNotification({ orderData, emailConfig }) {
 ========================================
 
 Nom du Client : ${customer.fullName}
-Téléphone : ${customer.phone}
+Téléphone : ${customer.phone}${customer.phoneBackup ? ` (Secours: ${customer.phoneBackup})` : ''}
 Wilaya & Adresse : ${customer.wilaya} - ${customer.address}
 ${customer.notes ? `Remarques : ${customer.notes}` : ''}
 
@@ -168,7 +168,7 @@ export function generateWhatsAppOrderUrl(orderData, storePhone = '0550000000') {
   const text = `🛒 *NOUVELLE COMMANDE - ZOOM MARKET DZ*
 
 👤 *Nom:* ${customer.fullName}
-📞 *Tél:* ${customer.phone}
+📞 *Tél:* ${customer.phone}${customer.phoneBackup ? ` (Secours: ${customer.phoneBackup})` : ''}
 📍 *Wilaya:* ${customer.wilaya}
 🏠 *Adresse:* ${customer.address}
 ${customer.notes ? `📝 *Notes:* ${customer.notes}\n` : ''}

@@ -539,6 +539,12 @@ export default function AdminModal({
                               <PhoneCall className="w-3 h-3" />
                               {cust.phone}
                             </a>
+                            {cust.phoneBackup && (
+                              <a href={`tel:${cust.phoneBackup}`} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium hover:underline flex items-center gap-1 mt-0.5">
+                                <PhoneCall className="w-2.5 h-2.5" />
+                                {cust.phoneBackup} (Secours)
+                              </a>
+                            )}
                           </div>
                           <div>
                             <span className="text-slate-400 block text-[10px]">Wilaya & Adresse:</span>
