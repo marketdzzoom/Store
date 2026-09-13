@@ -12,7 +12,9 @@ import {
   ZoomIn, 
   ZoomOut, 
   Maximize2,
-  RotateCcw
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
@@ -73,6 +75,55 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     onBuyNow(product, quantity);
   };
 
+  const touchStartXRef = useRef(null);
+
+  const handlePrevImage = (e) => {
+    e?.stopPropagation?.();
+    setZoomLevel(1);
+    setSelectedImageIndex((prev) => (prev === 0 ? imageList.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e) => {
+    e?.stopPropagation?.();
+    setZoomLevel(1);
+    setSelectedImageIndex((prev) => (prev === imageList.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartXRef.current - touchEndX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
+      }
+    }
+    touchStartXRef.current = null;
+  };
+
+  // Keyboard navigation when zoom modal is open
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isZoomModalOpen) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      } else if (e.key === 'Escape') {
+        setIsZoomModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomModalOpen, imageList.length]);
+
   return (
     <>
       {/* Main Product Quick View Modal */}
@@ -125,6 +176,37 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                     : { transformOrigin: 'center center' }
                 }
               />
+
+              {/* Prev / Next photo navigation arrows on modal preview */}
+              {imageList.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePrevImage(e);
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    title="Photo précédente"
+                    aria-label="Photo précédente"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNextImage(e);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    title="Photo suivante"
+                    aria-label="Photo suivante"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </>
+              )}
 
               {/* Hover Zoom Prompt Badge */}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
@@ -274,65 +356,114 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
       {/* Fullscreen HD Zoom Modal */}
       {isZoomModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 animate-fadeIn">
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-5 animate-fadeIn select-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Top Controls Bar */}
-          <div className="flex items-center justify-between text-white z-10 px-4">
-            <h3 className="font-extrabold text-sm truncate max-w-xs">{titleText}</h3>
+          <div className="flex items-center justify-between text-white z-30 px-3 sm:px-5 py-2.5 bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <h3 className="font-extrabold text-xs sm:text-sm truncate max-w-[160px] sm:max-w-md">{titleText}</h3>
+              {imageList.length > 1 && (
+                <span className="text-[10px] sm:text-xs font-mono font-bold bg-white/10 text-brand-orange px-2.5 py-1 rounded-lg border border-white/10 flex-shrink-0 shadow-sm">
+                  {selectedImageIndex + 1} / {imageList.length}
+                </span>
+              )}
+            </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <button
+                type="button"
                 onClick={() => setZoomLevel((z) => Math.min(3, z + 0.5))}
-                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors"
+                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors active:scale-95"
                 title="Zoom Avant (+)"
               >
-                <ZoomIn className="w-5 h-5" />
+                <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
+                type="button"
                 onClick={() => setZoomLevel((z) => Math.max(1, z - 0.5))}
-                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors"
+                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors active:scale-95"
                 title="Zoom Arrière (-)"
               >
-                <ZoomOut className="w-5 h-5" />
+                <ZoomOut className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
+                type="button"
                 onClick={() => setZoomLevel(1)}
-                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors"
-                title="Réinitialiser"
+                className="p-2 bg-slate-800/80 hover:bg-brand-orange rounded-xl transition-colors active:scale-95"
+                title="Réinitialiser le zoom"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
+                type="button"
                 onClick={() => setIsZoomModalOpen(false)}
-                className="p-2 bg-slate-800/80 hover:bg-red-600 rounded-xl transition-colors ml-2"
-                title="Fermer"
+                className="p-2 bg-slate-800/80 hover:bg-red-600 rounded-xl transition-colors ml-1 sm:ml-2 active:scale-95"
+                title="Fermer (Échap)"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
 
-          {/* Fullscreen Image Container */}
-          <div className="flex-1 flex items-center justify-center overflow-auto p-4">
+          {/* Fullscreen Image Container with Floating Navigation Arrows */}
+          <div className="flex-1 flex items-center justify-center overflow-auto p-2 sm:p-4 relative my-2">
+            
+            {/* Previous Photo Arrow */}
+            {imageList.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-4 rounded-full bg-slate-900/85 hover:bg-brand-orange text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all duration-200 active:scale-90 hover:scale-110 flex items-center justify-center group"
+                title="Photo précédente (Flèche gauche ou glisser)"
+                aria-label="Photo précédente"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-8 sm:h-8 transition-transform group-hover:-translate-x-1" />
+              </button>
+            )}
+
+            {/* Main Zoomed Image */}
             <img
               src={currentImage}
               alt={titleText}
-              className="max-h-[85vh] max-w-[90vw] object-contain transition-transform duration-200 cursor-grab active:cursor-grabbing shadow-2xl rounded-2xl"
+              className="max-h-[78vh] sm:max-h-[84vh] max-w-[88vw] object-contain transition-transform duration-200 cursor-grab active:cursor-grabbing shadow-2xl rounded-2xl select-none"
               style={{ transform: `scale(${zoomLevel})` }}
             />
+
+            {/* Next Photo Arrow */}
+            {imageList.length > 1 && (
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-4 rounded-full bg-slate-900/85 hover:bg-brand-orange text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all duration-200 active:scale-90 hover:scale-110 flex items-center justify-center group"
+                title="Photo suivante (Flèche droite ou glisser)"
+                aria-label="Photo suivante"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-8 sm:h-8 transition-transform group-hover:translate-x-1" />
+              </button>
+            )}
           </div>
 
-          {/* Bottom Thumbnails */}
+          {/* Bottom Thumbnails Navigation */}
           {imageList.length > 1 && (
-            <div className="flex items-center justify-center gap-3 py-2 z-10">
+            <div className="flex items-center justify-center gap-2.5 sm:gap-3 py-2 z-20 overflow-x-auto max-w-full px-2 no-scrollbar">
               {imageList.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedImageIndex === idx ? 'border-brand-orange scale-110' : 'border-slate-700 opacity-60'
+                  type="button"
+                  onClick={() => {
+                    setZoomLevel(1);
+                    setSelectedImageIndex(idx);
+                  }}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                    selectedImageIndex === idx 
+                      ? 'border-brand-orange scale-110 shadow-lg shadow-brand-orange/30' 
+                      : 'border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500'
                   }`}
                 >
-                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={`Miniature ${idx + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
