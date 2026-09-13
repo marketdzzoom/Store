@@ -13,6 +13,7 @@ export const INITIAL_PRODUCTS = [
       "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80"
     ],
+    colors: ["Noir Mat", "Blanc Perle", "Bleu Nuit"],
     inStock: true,
     stockQuantity: 15,
     rating: 4.9,
@@ -32,6 +33,8 @@ export const INITIAL_PRODUCTS = [
       "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=800&q=80"
     ],
+    sizes: ["41mm", "45mm", "49mm"],
+    colors: ["Noir Titane", "Argent", "Vert Forêt"],
     inStock: true,
     stockQuantity: 8,
     rating: 4.8,
@@ -50,6 +53,8 @@ export const INITIAL_PRODUCTS = [
       "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=80"
     ],
+    sizes: ["14 pouces", "15.6 pouces", "17.3 pouces"],
+    colors: ["Gris Anthracite", "Bleu Marine", "Noir"],
     inStock: false,
     stockQuantity: 0,
     rating: 4.7,
@@ -137,10 +142,34 @@ export const INITIAL_PRODUCTS = [
     images: [
       "https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=800&q=80"
     ],
+    colors: ["Or Vintage", "Bronze Sculpté", "Noir Rétro"],
     inStock: true,
     stockQuantity: 14,
     rating: 4.9,
     reviewsCount: 64
+  },
+  {
+    id: "prod-9",
+    title: "Baskets Sneakers Confort Sport Pro Running",
+    titleAr: "حذاء رياضي مريح للجري والمشي برو",
+    price: 6500,
+    oldPrice: 8200,
+    category: "Mode & Habillement",
+    badge: "Tendance 2026",
+    description: "Baskets running respirantes et ultra-légères avec semelle amortissante à mémoire de forme. Idéales pour la marche quotidienne, le sport et le style urbain.",
+    descriptionAr: "حذاء رياضي عصري فائق الخفة ومقاوم للصدمات بنعل طبي مريح للقدمين. مناسب للجري والأنشطة اليومية بأعلى جودة.",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?auto=format&fit=crop&w=800&q=80"
+    ],
+    sizes: ["40", "41", "42", "43", "44"],
+    colors: ["Rouge Sport", "Blanc Pur", "Noir All-Black"],
+    inStock: true,
+    stockQuantity: 25,
+    rating: 4.9,
+    reviewsCount: 78
   }
 ];
 

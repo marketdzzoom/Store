@@ -147,25 +147,29 @@ export default function App() {
   }, [darkMode]);
 
   // Cart Operations
-  const handleAddToCart = (product, quantity = 1) => {
+  const handleAddToCart = (product, quantity = 1, options = {}) => {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
 
+    const selectedSize = options?.selectedSize || '';
+    const selectedColor = options?.selectedColor || '';
+    const cartItemId = `${product.id}${selectedSize ? `-${selectedSize}` : ''}${selectedColor ? `-${selectedColor}` : ''}`;
+
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find((item) => (item.cartItemId || item.id) === cartItemId);
       if (existing) {
         return prevCart.map((item) =>
-          item.id === product.id
+          (item.cartItemId || item.id) === cartItemId
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prevCart, { ...product, quantity }];
+      return [...prevCart, { ...product, cartItemId, selectedSize, selectedColor, quantity }];
     });
   };
 
-  const handleBuyNow = (product, quantity = 1) => {
+  const handleBuyNow = (product, quantity = 1, options = {}) => {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
-    handleAddToCart(product, quantity);
+    handleAddToCart(product, quantity, options);
     setQuickViewProduct(null);
     setCartInitialStep(2); // Directly jump to shipping & confirmation step!
     setIsCartOpen(true);
@@ -176,20 +180,20 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  const handleUpdateQuantity = (productId, newQty) => {
+  const handleUpdateQuantity = (targetId, newQty) => {
     if (newQty <= 0) {
-      handleRemoveItem(productId);
+      handleRemoveItem(targetId);
       return;
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity: newQty } : item
+        (item.cartItemId || item.id) === targetId ? { ...item, quantity: newQty } : item
       )
     );
   };
 
-  const handleRemoveItem = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const handleRemoveItem = (targetId) => {
+    setCart((prevCart) => prevCart.filter((item) => (item.cartItemId || item.id) !== targetId));
   };
 
   const handleClearCart = () => {

@@ -20,7 +20,8 @@ import {
   DollarSign,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
+  Sliders
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -86,6 +87,10 @@ export default function AdminModal({
   const [inStock, setInStock] = useState(true);
   const [stockQuantity, setStockQuantity] = useState('10');
   const [isVisible, setIsVisible] = useState(true);
+
+  // Product Variants / Specificities State (Sizes & Colors)
+  const [sizesInput, setSizesInput] = useState('');
+  const [colorsInput, setColorsInput] = useState('');
 
   // Multi-Image State
   const [imageUrlsText, setImageUrlsText] = useState('');
@@ -273,6 +278,16 @@ export default function AdminModal({
     const defaultFallback = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80";
     const finalImageList = allImages.length > 0 ? allImages : [defaultFallback];
 
+    const parsedSizes = sizesInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const parsedColors = colorsInput
+      .split(',')
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
     const newProd = {
       id: `prod-${Date.now()}`,
       title: title.trim(),
@@ -285,6 +300,8 @@ export default function AdminModal({
       descriptionAr: descriptionAr.trim() || description.trim(),
       image: finalImageList[0],
       images: finalImageList,
+      sizes: parsedSizes,
+      colors: parsedColors,
       inStock: inStock,
       stockQuantity: inStock ? parseInt(stockQuantity || 10) : 0,
       isVisible: isVisible,
@@ -303,6 +320,8 @@ export default function AdminModal({
     setOldPrice('');
     setDescription('');
     setDescriptionAr('');
+    setSizesInput('');
+    setColorsInput('');
     setImageUrlsText('');
     setImageFilesPreviews([]);
     setStockQuantity('10');
@@ -644,11 +663,27 @@ export default function AdminModal({
                         {/* Items summary */}
                         <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700 text-xs">
                           <span className="font-bold text-slate-400 text-[10px] uppercase block mb-1">Produits commandés ({items.length}):</span>
-                          <ul className="space-y-1 text-slate-800 dark:text-slate-200">
+                          <ul className="space-y-1.5 text-slate-800 dark:text-slate-200">
                             {items.map((it, idx) => (
-                              <li key={idx} className="flex justify-between">
-                                <span>• {it.title} x{it.quantity}</span>
-                                <span className="font-bold">{formatPrice(it.price * it.quantity)}</span>
+                              <li key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-1 border-b border-slate-100 dark:border-slate-800/60 last:border-0 gap-1">
+                                <div>
+                                  <span className="font-semibold">• {it.title} x{it.quantity}</span>
+                                  {(it.selectedSize || it.selectedColor) && (
+                                    <div className="flex items-center gap-1.5 mt-0.5 ml-2.5 flex-wrap">
+                                      {it.selectedSize && (
+                                        <span className="text-[10px] font-bold bg-brand-orange/10 text-brand-orange dark:bg-brand-orange/20 px-2 py-0.5 rounded border border-brand-orange/30">
+                                          Pointure/Taille: {it.selectedSize}
+                                        </span>
+                                      )}
+                                      {it.selectedColor && (
+                                        <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded">
+                                          Couleur: {it.selectedColor}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="font-bold sm:text-right flex-shrink-0">{formatPrice(it.price * it.quantity)}</span>
                               </li>
                             ))}
                           </ul>
@@ -812,6 +847,53 @@ export default function AdminModal({
                       />
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Spécificités & Variantes du Produit (Pointures, Tailles & Couleurs) */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-brand-orange" />
+                    Spécificités & Variantes du Produit (Optionnel)
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Séparer chaque option par une virgule
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      👟 Pointures / Tailles disponibles
+                    </label>
+                    <input
+                      type="text"
+                      value={sizesInput}
+                      onChange={(e) => setSizesInput(e.target.value)}
+                      placeholder="Ex: 39, 40, 41, 42, 43, 44 ou S, M, L, XL"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none placeholder:text-slate-400"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Le client pourra choisir sa taille sur la fiche produit avant de commander.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      🎨 Couleurs disponibles
+                    </label>
+                    <input
+                      type="text"
+                      value={colorsInput}
+                      onChange={(e) => setColorsInput(e.target.value)}
+                      placeholder="Ex: Noir, Blanc, Bleu Marine, Gris, Rouge"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none placeholder:text-slate-400"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Le client pourra choisir sa couleur préférée (transmise au livreur).
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1388,6 +1470,18 @@ export default function AdminModal({
                                 {imgCount > 1 && (
                                   <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold hidden sm:inline">
                                     🖼️ {imgCount} photos
+                                  </span>
+                                )}
+
+                                {p.sizes && p.sizes.length > 0 && (
+                                  <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-900 whitespace-nowrap">
+                                    👟 {p.sizes.length} taille{p.sizes.length > 1 ? 's' : ''}
+                                  </span>
+                                )}
+
+                                {p.colors && p.colors.length > 0 && (
+                                  <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-900 whitespace-nowrap">
+                                    🎨 {p.colors.length} couleur{p.colors.length > 1 ? 's' : ''}
                                   </span>
                                 )}
                               </div>

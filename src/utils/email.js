@@ -9,7 +9,13 @@ export async function sendOrderNotification({ orderData, emailConfig }) {
 
   // Build items formatted text
   const itemsText = items
-    .map((item) => `- ${item.title} x ${item.quantity} (${formatPrice(item.price)} unitaire)`)
+    .map((item) => {
+      const specs = [];
+      if (item.selectedSize) specs.push(`Pointure/Taille: ${item.selectedSize}`);
+      if (item.selectedColor) specs.push(`Couleur: ${item.selectedColor}`);
+      const specsStr = specs.length > 0 ? ` (${specs.join(' | ')})` : '';
+      return `- ${item.title}${specsStr} x ${item.quantity} (${formatPrice(item.price)} unitaire)`;
+    })
     .join('\n');
 
   // Format full message body
@@ -162,7 +168,13 @@ export function generateWhatsAppOrderUrl(orderData, storePhone = '0550000000') {
   const { customer, items, subtotal, shippingFee, total } = orderData;
   
   const itemsList = items
-    .map(i => `• *${i.title}* x${i.quantity} (${formatPrice(i.price)})`)
+    .map(i => {
+      const specs = [];
+      if (i.selectedSize) specs.push(`Pointure/Taille: ${i.selectedSize}`);
+      if (i.selectedColor) specs.push(`Couleur: ${i.selectedColor}`);
+      const specsStr = specs.length > 0 ? ` [${specs.join(' | ')}]` : '';
+      return `• *${i.title}*${specsStr} x${i.quantity} (${formatPrice(i.price)})`;
+    })
     .join('\n');
 
   const text = `🛒 *NOUVELLE COMMANDE - ZOOM MARKET DZ*

@@ -10,10 +10,15 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
   const isOutOfStock = product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية';
+  const hasVariants = Boolean((product.sizes && product.sizes.length > 0) || (product.colors && product.colors.length > 0));
 
   const handleAdd = (e) => {
     e.stopPropagation();
     if (isOutOfStock) return;
+    if (hasVariants) {
+      onQuickView(product);
+      return;
+    }
     onAddToCart(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -22,6 +27,10 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
   const handleOrder = (e) => {
     e.stopPropagation();
     if (isOutOfStock) return;
+    if (hasVariants) {
+      onQuickView(product);
+      return;
+    }
     if (onBuyNow) {
       onBuyNow(product, 1);
     } else {
@@ -84,6 +93,14 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
           {product.images && product.images.length > 1 && (
             <span className="absolute bottom-2.5 right-2.5 bg-brand-navy/85 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-sm shadow">
               +{product.images.length} {t.photosCount}
+            </span>
+          )}
+
+          {/* Variants indicator badge */}
+          {hasVariants && !isOutOfStock && (
+            <span className="absolute bottom-2.5 left-2.5 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-sm shadow flex items-center gap-1 border border-white/15">
+              <span>👟🎨</span>
+              <span>{t.hasVariantsBadge || 'Au choix'}</span>
             </span>
           )}
 

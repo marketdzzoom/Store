@@ -24,6 +24,11 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
+  // Product Specificities / Variants State (Sizes & Colors)
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [variantError, setVariantError] = useState('');
+
   // HD Interactive Zoom States
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -89,6 +94,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     setZoomLevel(1);
     setIsZoomModalOpen(false);
     setImgError(false);
+    setSelectedSize(product?.sizes && product.sizes.length > 0 ? product.sizes[0] : '');
+    setSelectedColor(product?.colors && product.colors.length > 0 ? product.colors[0] : '');
+    setVariantError('');
   }, [product]);
 
   // Keyboard navigation when zoom modal is open
@@ -128,14 +136,30 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
   const handleAdd = () => {
     if (isOutOfStock) return;
-    onAddToCart(product, quantity);
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une taille.');
+      return;
+    }
+    if (product.colors && product.colors.length > 0 && !selectedColor) {
+      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une couleur.');
+      return;
+    }
+    onAddToCart(product, quantity, { selectedSize, selectedColor });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
   const handleBuy = () => {
     if (isOutOfStock) return;
-    onBuyNow(product, quantity);
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une taille.');
+      return;
+    }
+    if (product.colors && product.colors.length > 0 && !selectedColor) {
+      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une couleur.');
+      return;
+    }
+    onBuyNow(product, quantity, { selectedSize, selectedColor });
   };
 
   return (
@@ -283,9 +307,100 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               </div>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
                 {descText}
               </p>
+
+              {/* Product Specificities & Variants: Sizes & Colors */}
+              {!isOutOfStock && (product.sizes?.length > 0 || product.colors?.length > 0) && (
+                <div className="space-y-3.5 mb-5">
+                  {/* Sizes / Pointures Selection */}
+                  {product.sizes && product.sizes.length > 0 && (
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <span>👟</span>
+                          <span>{t.selectSize || 'Pointure / Taille :'}</span>
+                        </span>
+                        {selectedSize && (
+                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/20">
+                            {selectedSize}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {product.sizes.map((sz) => {
+                          const isSelected = selectedSize === sz;
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSize(sz);
+                                setVariantError('');
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-150 active:scale-95 ${
+                                isSelected
+                                  ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/30'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
+                              }`}
+                            >
+                              {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Colors Selection */}
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <span>🎨</span>
+                          <span>{t.selectColor || 'Couleur :'}</span>
+                        </span>
+                        {selectedColor && (
+                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/20">
+                            {selectedColor}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {product.colors.map((col) => {
+                          const isSelected = selectedColor === col;
+                          return (
+                            <button
+                              key={col}
+                              type="button"
+                              onClick={() => {
+                                setSelectedColor(col);
+                                setVariantError('');
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-1.5 ${
+                                isSelected
+                                  ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
+                              }`}
+                            >
+                              <span className={`w-2.5 h-2.5 rounded-full inline-block ${isSelected ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                              <span>{col}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {variantError && (
+                    <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-700 dark:text-rose-300 font-bold flex items-center gap-2 animate-fadeIn">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>{variantError}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Quantity Selector */}
               {!isOutOfStock && (

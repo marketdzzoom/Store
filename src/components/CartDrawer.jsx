@@ -373,9 +373,10 @@ export default function CartDrawer({
                   {/* Items List */}
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 space-y-2">
                     {cartItems.map((item) => {
+                      const itemKey = item.cartItemId || item.id;
                       const itemTitle = (lang === 'ar' && item.titleAr) ? item.titleAr : item.title;
                       return (
-                        <div key={item.id} className="pt-2 pb-3 flex items-center justify-between gap-3">
+                        <div key={itemKey} className="pt-2 pb-3 flex items-center justify-between gap-3">
                           <img
                             src={item.images ? item.images[0] : item.image}
                             alt={itemTitle}
@@ -385,7 +386,24 @@ export default function CartDrawer({
                             <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                               {itemTitle}
                             </h4>
-                            <p className="text-xs text-brand-orange font-extrabold mt-0.5">
+
+                            {/* Chosen Variants: Size & Color */}
+                            {(item.selectedSize || item.selectedColor) && (
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                {item.selectedSize && (
+                                  <span className="text-[10px] font-bold bg-brand-orange/10 text-brand-orange dark:bg-brand-orange/20 px-2 py-0.5 rounded border border-brand-orange/30">
+                                    {t.size || 'Taille'}: {item.selectedSize}
+                                  </span>
+                                )}
+                                {item.selectedColor && (
+                                  <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded">
+                                    {t.color || 'Couleur'}: {item.selectedColor}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <p className="text-xs text-brand-orange font-extrabold mt-1">
                               {formatPrice(item.price)}
                             </p>
                             
@@ -394,7 +412,7 @@ export default function CartDrawer({
                               <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
                                 <button
                                   type="button"
-                                  onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                  onClick={() => onUpdateQuantity(itemKey, item.quantity - 1)}
                                   className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white active:scale-90"
                                 >
                                   <Minus className="w-3 h-3" />
@@ -404,7 +422,7 @@ export default function CartDrawer({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                  onClick={() => onUpdateQuantity(itemKey, item.quantity + 1)}
                                   className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white active:scale-90"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -416,7 +434,7 @@ export default function CartDrawer({
                           <div className="text-right flex flex-col items-end justify-between h-16 flex-shrink-0">
                             <button
                               type="button"
-                              onClick={() => onRemoveItem(item.id)}
+                              onClick={() => onRemoveItem(itemKey)}
                               className="text-slate-400 hover:text-red-500 p-1 active:scale-90"
                               title="Supprimer"
                             >
@@ -479,7 +497,7 @@ export default function CartDrawer({
                     </div>
                     <div className="space-y-1.5 max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
                       {cartItems.map((item) => (
-                        <div key={item.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2 text-xs">
+                        <div key={item.cartItemId || item.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2 min-w-0">
                             <img
                               src={item.images?.[0] || item.image}
@@ -490,6 +508,11 @@ export default function CartDrawer({
                               <p className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px] sm:text-xs">
                                 {lang === 'ar' && item.titleAr ? item.titleAr : item.title}
                               </p>
+                              {(item.selectedSize || item.selectedColor) && (
+                                <p className="text-[10px] font-bold text-brand-orange truncate">
+                                  {[item.selectedSize ? `${t.size || 'Taille'}: ${item.selectedSize}` : '', item.selectedColor ? `${t.color || 'Couleur'}: ${item.selectedColor}` : ''].filter(Boolean).join(' • ')}
+                                </p>
+                              )}
                               <p className="text-[10px] text-slate-400">
                                 Qté: {item.quantity} × {formatPrice(item.price)}
                               </p>
