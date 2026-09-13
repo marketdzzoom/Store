@@ -33,8 +33,37 @@ export function getStoredProducts() {
     const data = localStorage.getItem(PRODUCTS_KEY);
     if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        let hasChanges = false;
+        const merged = parsed.map((p) => {
+          const init = INITIAL_PRODUCTS.find((i) => i.id === p.id);
+          if (init) {
+            const needsSizes = (!p.sizes || p.sizes.length === 0) && init.sizes && init.sizes.length > 0;
+            const needsColors = (!p.colors || p.colors.length === 0) && init.colors && init.colors.length > 0;
+            if (needsSizes || needsColors) {
+              hasChanges = true;
+              return {
+                ...p,
+                sizes: (p.sizes && p.sizes.length > 0) ? p.sizes : (init.sizes || []),
+                colors: (p.colors && p.colors.length > 0) ? p.colors : (init.colors || [])
+              };
+            }
+          }
+          return p;
+        });
+
+        if (!merged.some((p) => p.id === 'prod-9')) {
+          const prod9 = INITIAL_PRODUCTS.find((i) => i.id === 'prod-9');
+          if (prod9) {
+            merged.push(prod9);
+            hasChanges = true;
+          }
+        }
+
+        if (hasChanges) {
+          saveProducts(merged);
+        }
+        return merged;
       }
     }
   } catch (e) {

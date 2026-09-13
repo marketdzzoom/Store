@@ -97,6 +97,12 @@ export const TRANSLATIONS = {
     chooseColorHint: "Sélectionnez votre couleur",
     hasVariantsBadge: "Tailles / Couleurs au choix",
     variantsPrompt: "Veuillez choisir votre taille et couleur",
+    clientSpecsTitle: "Spécificités pour le Livreur (Pointure / Couleur)",
+    clientSpecsDesc: "Précisez votre choix en 1 clic pour que le livreur apporte exactement votre pointure et couleur :",
+    sizeSelected: "Pointure / Taille choisie :",
+    colorSelected: "Couleur choisie :",
+    quickSizes: "Pointures / Tailles :",
+    quickColors: "Couleurs :",
     allRightsReserved: "Tous droits réservés.",
     madeWithLove: "Conçu pour Zoom Market Dz en Algérie 🇩🇿"
   },
@@ -198,6 +204,12 @@ export const TRANSLATIONS = {
     chooseColorHint: "اختر اللون المفضل",
     hasVariantsBadge: "مقاسات وألوان متعددة",
     variantsPrompt: "يرجى اختيار المقاس واللون المناسبين",
+    clientSpecsTitle: "مواصفات الطلبية لشركة التوصيل (المقاس واللون)",
+    clientSpecsDesc: "حدد اختيارك بضغطة زر واحدة حتى يحضر عامل التوصيل مقاسك ولونك المطلوبين بدقة :",
+    sizeSelected: "المقاس المختار :",
+    colorSelected: "اللون المختار :",
+    quickSizes: "المقاسات المتاحة :",
+    quickColors: "الألوان المتاحة :",
     allRightsReserved: "جميع الحقوق محفوظة.",
     madeWithLove: "صنع خصيصاً لـ زوم ماركت ديزاد في الجزائر 🇩🇿"
   }

@@ -196,6 +196,26 @@ export default function App() {
     setCart((prevCart) => prevCart.filter((item) => (item.cartItemId || item.id) !== targetId));
   };
 
+  const handleUpdateItemVariant = (cartItemId, newVariant) => {
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        const itemKey = item.cartItemId || item.id;
+        if (itemKey === cartItemId) {
+          const updatedSize = newVariant.selectedSize !== undefined ? newVariant.selectedSize : item.selectedSize;
+          const updatedColor = newVariant.selectedColor !== undefined ? newVariant.selectedColor : item.selectedColor;
+          const newCartItemId = `${item.id}${updatedSize ? `-${updatedSize}` : ''}${updatedColor ? `-${updatedColor}` : ''}`;
+          return {
+            ...item,
+            cartItemId: newCartItemId,
+            selectedSize: updatedSize,
+            selectedColor: updatedColor
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   const handleClearCart = () => {
     setCart([]);
   };
@@ -399,6 +419,7 @@ export default function App() {
         cartItems={cart}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
+        onUpdateItemVariant={handleUpdateItemVariant}
         onClearCart={handleClearCart}
         onOrderSuccess={(successPayload) => {
           setIsCartOpen(false);

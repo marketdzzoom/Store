@@ -43,6 +43,7 @@ export default function CartDrawer({
   cartItems,
   onUpdateQuantity,
   onRemoveItem,
+  onUpdateItemVariant,
   onClearCart,
   onOrderSuccess,
   emailConfig,
@@ -407,6 +408,66 @@ export default function CartDrawer({
                               {formatPrice(item.price)}
                             </p>
                             
+                            {/* Interactive Quick Variant Switcher in Cart Step 1 */}
+                            {((item.sizes && item.sizes.length > 0) || (item.colors && item.colors.length > 0)) && (
+                              <div className="mt-2 space-y-2 p-2 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                                {item.sizes && item.sizes.length > 0 && (
+                                  <div>
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      👟 {t.size || 'Pointure / Taille'} : <strong className="text-brand-orange font-black">{item.selectedSize || 'À choisir'}</strong>
+                                    </span>
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {item.sizes.map((sz) => {
+                                        const isSel = item.selectedSize === sz;
+                                        return (
+                                          <button
+                                            key={sz}
+                                            type="button"
+                                            onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedSize: sz })}
+                                            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all active:scale-95 border ${
+                                              isSel
+                                                ? 'bg-brand-orange text-white border-brand-orange shadow-xs scale-105'
+                                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:border-brand-orange/60'
+                                            }`}
+                                          >
+                                            {sz}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {item.colors && item.colors.length > 0 && (
+                                  <div>
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      🎨 {t.color || 'Couleur'} : <strong className="text-brand-orange font-black">{item.selectedColor || 'À choisir'}</strong>
+                                    </span>
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {item.colors.map((col) => {
+                                        const isSel = item.selectedColor === col;
+                                        return (
+                                          <button
+                                            key={col}
+                                            type="button"
+                                            onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
+                                            className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1 ${
+                                              isSel
+                                                ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-xs scale-105'
+                                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:border-brand-orange/60'
+                                            }`}
+                                          >
+                                            <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                                            <span>{col}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             {/* Quantity Controls */}
                             <div className="flex items-center gap-2 mt-2">
                               <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
@@ -523,6 +584,135 @@ export default function CartDrawer({
                           </span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Dedicated Interactive Specificities & Variants Card for Delivery in Step 2 */}
+                  <div className="p-3.5 bg-gradient-to-br from-brand-orange/5 via-slate-50 to-slate-100 dark:from-brand-orange/10 dark:via-slate-850 dark:to-slate-900 rounded-2xl border-2 border-brand-orange/30 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">👟🎨</span>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                            {t.clientSpecsTitle || 'Spécificités pour le Livreur (Pointure / Couleur)'}
+                          </h4>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                            {t.clientSpecsDesc || 'Précisez votre choix en 1 clic pour que le livreur apporte exactement votre pointure et couleur :'}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2 py-0.5 rounded-lg border border-brand-orange/30 flex-shrink-0">
+                        {lang === 'ar' ? 'اختيار فوري' : '1-Clic'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      {cartItems.map((item) => {
+                        const itemKey = item.cartItemId || item.id;
+                        const itemTitle = (lang === 'ar' && item.titleAr) ? item.titleAr : item.title;
+                        const availableSizes = (item.sizes && item.sizes.length > 0)
+                          ? item.sizes
+                          : ['39', '40', '41', '42', '43', '44', '45', 'S', 'M', 'L', 'XL'];
+                        const availableColors = (item.colors && item.colors.length > 0)
+                          ? item.colors
+                          : ['Noir', 'Blanc', 'Gris', 'Bleu Marine', 'Rouge', 'Marron'];
+
+                        return (
+                          <div
+                            key={itemKey}
+                            className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-750 space-y-2.5 shadow-xs"
+                          >
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                              <span className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                                {itemTitle}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                Qté: {item.quantity}
+                              </span>
+                            </div>
+
+                            {/* Pointure / Taille Selector */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                  <span>👟</span>
+                                  <span>{t.size || 'Pointure / Taille'} :</span>
+                                </span>
+                                {item.selectedSize ? (
+                                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>{item.selectedSize}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-extrabold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded animate-pulse">
+                                    {lang === 'ar' ? '👈 اضغط لتحديد المقاس' : '👈 Cliquez pour choisir'}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {availableSizes.map((sz) => {
+                                  const isSel = item.selectedSize === sz;
+                                  return (
+                                    <button
+                                      key={sz}
+                                      type="button"
+                                      onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedSize: sz })}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 border ${
+                                        isSel
+                                          ? 'bg-brand-orange text-white border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/30'
+                                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      {sz}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Couleur Selector */}
+                            <div className="pt-1">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                  <span>🎨</span>
+                                  <span>{t.color || 'Couleur'} :</span>
+                                </span>
+                                {item.selectedColor ? (
+                                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>{item.selectedColor}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-extrabold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded animate-pulse">
+                                    {lang === 'ar' ? '👈 اضغط لتحديد اللون' : '👈 Cliquez pour choisir'}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {availableColors.map((col) => {
+                                  const isSel = item.selectedColor === col;
+                                  return (
+                                    <button
+                                      key={col}
+                                      type="button"
+                                      onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${
+                                        isSel
+                                          ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
+                                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                                      <span>{col}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
