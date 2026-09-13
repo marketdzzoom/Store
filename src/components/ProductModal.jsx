@@ -29,27 +29,90 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isHoveringZoom, setIsHoveringZoom] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [imgError, setImgError] = useState(false);
 
   const imageRef = useRef(null);
+  const touchStartXRef = useRef(null);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
+
+  const fallbackImg = "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=800&q=80";
+
+  // Safe image list resolution even if product is null
+  const imageList = product
+    ? ((product.images && product.images.length > 0) ? product.images : [product.image || fallbackImg])
+    : [];
+
+  const handlePrevImage = (e) => {
+    e?.stopPropagation?.();
+    setZoomLevel(1);
+    setImgError(false);
+    if (imageList.length > 0) {
+      setSelectedImageIndex((prev) => (prev === 0 ? imageList.length - 1 : prev - 1));
+    }
+  };
+
+  const handleNextImage = (e) => {
+    e?.stopPropagation?.();
+    setZoomLevel(1);
+    setImgError(false);
+    if (imageList.length > 0) {
+      setSelectedImageIndex((prev) => (prev === imageList.length - 1 ? 0 : prev + 1));
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    if (e.changedTouches && e.changedTouches[0]) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartXRef.current - touchEndX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) {
+          handleNextImage();
+        } else {
+          handlePrevImage();
+        }
+      }
+    }
+    touchStartXRef.current = null;
+  };
 
   useEffect(() => {
     setSelectedImageIndex(0);
     setQuantity(1);
     setZoomLevel(1);
+    setIsZoomModalOpen(false);
+    setImgError(false);
   }, [product]);
+
+  // Keyboard navigation when zoom modal is open
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isZoomModalOpen) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      } else if (e.key === 'Escape') {
+        setIsZoomModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomModalOpen, imageList.length]);
 
   if (!product) return null;
 
   const isOutOfStock = product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية';
 
-  // Get image list
-  const imageList = (product.images && product.images.length > 0)
-    ? product.images
-    : [product.image];
-
-  const currentImage = imageList[selectedImageIndex] || imageList[0];
+  const currentImage = imageList[selectedImageIndex] || imageList[0] || fallbackImg;
 
   const titleText = (lang === 'ar' && product.titleAr) ? product.titleAr : product.title;
   const descText = (lang === 'ar' && product.descriptionAr) ? product.descriptionAr : product.description;
@@ -74,55 +137,6 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     if (isOutOfStock) return;
     onBuyNow(product, quantity);
   };
-
-  const touchStartXRef = useRef(null);
-
-  const handlePrevImage = (e) => {
-    e?.stopPropagation?.();
-    setZoomLevel(1);
-    setSelectedImageIndex((prev) => (prev === 0 ? imageList.length - 1 : prev - 1));
-  };
-
-  const handleNextImage = (e) => {
-    e?.stopPropagation?.();
-    setZoomLevel(1);
-    setSelectedImageIndex((prev) => (prev === imageList.length - 1 ? 0 : prev + 1));
-  };
-
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartXRef.current - touchEndX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) {
-        handleNextImage();
-      } else {
-        handlePrevImage();
-      }
-    }
-    touchStartXRef.current = null;
-  };
-
-  // Keyboard navigation when zoom modal is open
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!isZoomModalOpen) return;
-      if (e.key === 'ArrowLeft') {
-        handlePrevImage();
-      } else if (e.key === 'ArrowRight') {
-        handleNextImage();
-      } else if (e.key === 'Escape') {
-        setIsZoomModalOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isZoomModalOpen, imageList.length]);
 
   return (
     <>
@@ -165,8 +179,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               className="flex-1 flex items-center justify-center py-4 relative cursor-zoom-in overflow-hidden rounded-2xl group"
             >
               <img
-                src={currentImage}
+                src={imgError ? fallbackImg : currentImage}
                 alt={titleText}
+                onError={() => setImgError(true)}
                 className={`max-h-72 w-full object-contain rounded-2xl transition-transform duration-300 ${
                   isHoveringZoom ? 'scale-125' : 'scale-100'
                 } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
@@ -426,8 +441,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
             {/* Main Zoomed Image */}
             <img
-              src={currentImage}
+              src={imgError ? fallbackImg : currentImage}
               alt={titleText}
+              onError={() => setImgError(true)}
               className="max-h-[78vh] sm:max-h-[84vh] max-w-[88vw] object-contain transition-transform duration-200 cursor-grab active:cursor-grabbing shadow-2xl rounded-2xl select-none"
               style={{ transform: `scale(${zoomLevel})` }}
             />
