@@ -1,6 +1,6 @@
 export const TRANSLATIONS = {
   fr: {
-    heroBadge: "L'Excellence du E-Commerce N°1 en Algérie 🇩🇿",
+    heroBadge: "Votre Boutique en Ligne de Confiance en Algérie 🇩🇿",
     heroTitlePrefix: "Le Meilleur du Shopping avec ",
     heroTitleSuffix: "Zoom Market Dz",
     heroDesc: "Découvrez notre sélection exclusive d'articles haute qualité avec garantie et livraison rapide dans les 69 Wilayas !",
@@ -70,7 +70,7 @@ export const TRANSLATIONS = {
     footerNotice2Desc: "Payez en espèces après inspection de votre produit.",
     footerNotice3: "Service Client 7j/7",
     footerNotice3Desc: "Assistance téléphonique et conseils personnalisés.",
-    footerAbout: "Zoom Market Dz est la boutique officielle N°1 en Algérie. Nous sélectionnons les meilleurs produits avec une garantie totale de qualité.",
+    footerAbout: "Zoom Market Dz est votre boutique en ligne de confiance en Algérie. Nous sélectionnons des produits de qualité avec un service client attentionné et un paiement sécurisé à la livraison.",
     nationalCoverage: "Couverture Nationale (69 Wilayas)",
     categoriesHeader: "Catégories Principales",
     contactSupport: "Contact & Assistance",
@@ -80,7 +80,7 @@ export const TRANSLATIONS = {
     madeWithLove: "Conçu pour Zoom Market Dz en Algérie 🇩🇿"
   },
   ar: {
-    heroBadge: "الرائد الأول للتسوق الإلكتروني في الجزائر 🇩🇿",
+    heroBadge: "متجركم الموثوق للتسوق الإلكتروني في الجزائر 🇩🇿",
     heroTitlePrefix: "أفضل تجربة تسوق مع ",
     heroTitleSuffix: "زوم ماركت ديزاد",
     heroDesc: "اكتشف تشكيلتنا الحصرية من المنتجات عالية الجودة مع الضمان والتوصيل السريع لـ 69 ولاية!",
@@ -150,7 +150,7 @@ export const TRANSLATIONS = {
     footerNotice2Desc: "ادفع نقداً بعد فحص وتفقد منتجك.",
     footerNotice3: "خدمة الزبائن 7/7",
     footerNotice3Desc: "مرافقة هاتفية وتوجيه شخصي طيلة أيام الأسبوع.",
-    footerAbout: "زوم ماركت ديزاد هي المتجر الرسمي الأول في الجزائر. نختار لكم أفضل المنتجات بأعلى معايير الجودة والضمان.",
+    footerAbout: "زوم ماركت ديزاد هو متجركم الإلكتروني الموثوق في الجزائر. نحرص على انتقاء منتجات عالية الجودة مع ضمان رضاكم وتوصيل سريع وموثوق.",
     nationalCoverage: "تغطية وطنية شاملة (69 ولاية)",
     categoriesHeader: "الأقسام الرئيسية",
     contactSupport: "الاتصال والدعم",

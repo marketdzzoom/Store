@@ -24,7 +24,7 @@ export default function Logo({ className = "h-11", showText = true }) {
             </span>
           </div>
           <span className="text-[10px] font-extrabold tracking-widest text-brand-navy dark:text-slate-300 uppercase -mt-0.5">
-            DZ STORE N°1 🇩🇿
+            BOUTIQUE EN LIGNE DZ 🇩🇿
           </span>
         </div>
       )}
