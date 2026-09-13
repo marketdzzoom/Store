@@ -209,6 +209,31 @@ export default function App() {
     saveProducts(updated);
   };
 
+  const handleToggleProductVisibility = (productId) => {
+    const updated = products.map((p) =>
+      p.id === productId
+        ? { ...p, isVisible: p.isVisible === false ? true : false }
+        : p
+    );
+    setProducts(updated);
+    saveProducts(updated);
+  };
+
+  const handleToggleProductStock = (productId) => {
+    const updated = products.map((p) => {
+      if (p.id !== productId) return p;
+      const isCurrentlyInStock = p.inStock !== false && (p.stockQuantity ?? 10) > 0;
+      return {
+        ...p,
+        inStock: !isCurrentlyInStock,
+        stockQuantity: isCurrentlyInStock ? 0 : 10,
+        badge: isCurrentlyInStock ? 'Rupture de Stock' : (p.badge === 'Rupture de Stock' ? 'Nouveau' : (p.badge || 'En Stock'))
+      };
+    });
+    setProducts(updated);
+    saveProducts(updated);
+  };
+
   const handleClearAllProducts = () => {
     setProducts([]);
     saveProducts([]);
@@ -231,9 +256,11 @@ export default function App() {
     saveEmailConfig(newConfig);
   };
 
-  // Filtered Products
+  // Filtered Products (Hides isVisible === false from public customers)
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      if (product.isVisible === false) return false;
+
       const matchesCategory =
         selectedCategory === 'Tous' || product.category === selectedCategory;
       
@@ -402,6 +429,8 @@ export default function App() {
           products={products}
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
+          onToggleProductVisibility={handleToggleProductVisibility}
+          onToggleProductStock={handleToggleProductStock}
           onClearAllProducts={handleClearAllProducts}
           onResetProducts={handleResetProducts}
           specialOffer={specialOffer}

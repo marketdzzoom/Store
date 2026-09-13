@@ -17,7 +17,9 @@ import {
   Calendar,
   Filter,
   Layers,
-  DollarSign
+  DollarSign,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -53,12 +55,15 @@ export default function AdminModal({
   products,
   onAddProduct,
   onDeleteProduct,
+  onToggleProductVisibility,
+  onToggleProductStock,
   onClearAllProducts,
   onResetProducts,
   specialOffer,
   onUpdateSpecialOffer
 }) {
   const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'add', 'special_offer', 'manage'
+  const [prodFilter, setProdFilter] = useState('all'); // 'all', 'visible', 'hidden', 'outofstock'
   
   // Orders Management State
   const [orders, setOrders] = useState([]);
@@ -76,9 +81,10 @@ export default function AdminModal({
   const [description, setDescription] = useState('');
   const [descriptionAr, setDescriptionAr] = useState('');
   
-  // Stock Management State
+  // Stock & Visibility State
   const [inStock, setInStock] = useState(true);
   const [stockQuantity, setStockQuantity] = useState('10');
+  const [isVisible, setIsVisible] = useState(true);
 
   // Multi-Image State
   const [imageUrlsText, setImageUrlsText] = useState('');
@@ -237,6 +243,7 @@ export default function AdminModal({
       images: finalImageList,
       inStock: inStock,
       stockQuantity: inStock ? parseInt(stockQuantity || 10) : 0,
+      isVisible: isVisible,
       rating: 5.0,
       reviewsCount: 1,
       createdAt: new Date().toISOString()
@@ -256,6 +263,7 @@ export default function AdminModal({
     setImageFilesPreviews([]);
     setStockQuantity('10');
     setInStock(true);
+    setIsVisible(true);
     setBadge('Nouveau');
   };
 
@@ -796,12 +804,47 @@ export default function AdminModal({
                 )}
               </div>
 
+              {/* Visibility Option */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-left">
+                  {isVisible ? (
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center flex-shrink-0">
+                      <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center flex-shrink-0">
+                      <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-xs font-extrabold text-slate-900 dark:text-white block">
+                      {isVisible ? 'Produit visible en boutique' : 'Produit masqué (Brouillon)'}
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                      {isVisible 
+                        ? 'Affiché immédiatement dans la boutique pour tous les clients.' 
+                        : 'Enregistré dans l’admin mais masqué aux clients (activable plus tard).'}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isVisible}
+                    onChange={(e) => setIsVisible(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange" />
+                </label>
+              </div>
+
               <button
                 type="submit"
                 className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Globe className="w-4 h-4" />
-                <span>Publier le produit dans la boutique</span>
+                <span>{isVisible ? 'Publier le produit dans la boutique' : 'Enregistrer le produit (Masqué)'}</span>
               </button>
             </form>
           )}
@@ -1031,129 +1074,295 @@ export default function AdminModal({
           )}
 
           {/* TAB 4: Manage Products */}
-          {activeTab === 'manage' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <p className="text-xs text-slate-500">
-                  {products.length} produit(s) dans votre catalogue.
-                </p>
-                <div className="flex items-center gap-2">
-                  {products.length > 0 && (
+          {activeTab === 'manage' && (() => {
+            const visibleCount = products.filter(p => p.isVisible !== false).length;
+            const hiddenCount = products.filter(p => p.isVisible === false).length;
+            const outOfStockCount = products.filter(p => p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية').length;
+
+            const displayedProducts = products.filter((p) => {
+              if (prodFilter === 'visible') return p.isVisible !== false;
+              if (prodFilter === 'hidden') return p.isVisible === false;
+              if (prodFilter === 'outofstock') return p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية';
+              return true;
+            });
+
+            return (
+              <div className="space-y-4">
+                {/* Header Stats & Global Actions */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Gestion du Catalogue ({products.length} article{products.length > 1 ? 's' : ''})
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {visibleCount} en ligne • {hiddenCount} masqué{hiddenCount > 1 ? 's' : ''} • {outOfStockCount} en rupture
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {products.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Êtes-vous sûr de vouloir supprimer TOUS les articles du catalogue ?\n\nConseil : Pour simplement cacher des articles aux clients, cliquez sur 'Masquer' individuellement.")) {
+                            if (onClearAllProducts) {
+                              onClearAllProducts();
+                            } else {
+                              products.forEach((p) => onDeleteProduct(p.id));
+                            }
+                          }
+                        }}
+                        className="text-xs text-red-600 hover:text-red-700 font-bold flex items-center gap-1 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Tout supprimer
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm("Êtes-vous sûr de vouloir supprimer TOUS les articles du catalogue ?")) {
-                          if (onClearAllProducts) {
-                            onClearAllProducts();
-                          } else {
-                            products.forEach((p) => onDeleteProduct(p.id));
-                          }
+                        if (window.confirm("Recharger les 8 produits de démonstration par défaut ?")) {
+                          onResetProducts();
                         }
                       }}
-                      className="text-xs text-red-600 hover:text-red-700 font-bold flex items-center gap-1 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 transition-colors"
+                      className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-bold flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Tout supprimer
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Recharger démo
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm("Recharger les 8 produits de démonstration par défaut ?")) {
-                        onResetProducts();
-                      }
-                    }}
-                    className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-bold flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Recharger démo
-                  </button>
+                  </div>
                 </div>
-              </div>
 
-              {products.length === 0 ? (
-                <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6">
-                  <Package className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    Le catalogue est actuellement vide
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">
-                    Tous les articles artificiels ont été supprimés. Vous pouvez ajouter vos propres produits ou recharger la démo à tout moment.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('add')}
-                    className="bg-brand-orange hover:bg-brand-orange-hover text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    Ajouter un nouveau produit
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto">
-                  {products.map((p) => {
-                    const isOut = p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية';
-                    const imgCount = p.images ? p.images.length : (p.image ? 1 : 0);
+                {/* Filter Tabs / Pills */}
+                {products.length > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setProdFilter('all')}
+                      className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+                        prodFilter === 'all'
+                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      Tous ({products.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProdFilter('visible')}
+                      className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        prodFilter === 'visible'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+                      }`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      En ligne ({visibleCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProdFilter('hidden')}
+                      className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        prodFilter === 'hidden'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
+                      }`}
+                    >
+                      <EyeOff className="w-3.5 h-3.5" />
+                      Masqués ({hiddenCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProdFilter('outofstock')}
+                      className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        prodFilter === 'outofstock'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 hover:bg-red-100'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                      En rupture ({outOfStockCount})
+                    </button>
+                  </div>
+                )}
 
-                    return (
-                      <div key={p.id} className="py-3 flex items-center justify-between gap-3">
-                        <img
-                          src={p.images ? p.images[0] : p.image}
-                          alt={p.title}
-                          className={`w-12 h-12 object-cover rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 ${
-                            isOut ? 'grayscale opacity-60' : ''
+                {/* Main Product List or Empty States */}
+                {products.length === 0 ? (
+                  <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6">
+                    <Package className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      Le catalogue est actuellement vide
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 mb-4">
+                      Tous les articles ont été supprimés. Vous pouvez ajouter vos nouveaux produits ou réinitialiser les exemples.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('add')}
+                      className="bg-brand-orange hover:bg-brand-orange-hover text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      Ajouter un nouveau produit
+                    </button>
+                  </div>
+                ) : displayedProducts.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      Aucun produit ne correspond au filtre sélectionné.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setProdFilter('all')}
+                      className="mt-2 text-xs font-bold text-brand-orange hover:underline"
+                    >
+                      Afficher tous les articles
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto pr-1">
+                    {displayedProducts.map((p) => {
+                      const isHidden = p.isVisible === false;
+                      const isOut = p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية';
+                      const imgCount = p.images ? p.images.length : (p.image ? 1 : 0);
+
+                      return (
+                        <div 
+                          key={p.id} 
+                          className={`py-3 px-2 sm:px-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${
+                            isHidden 
+                              ? 'bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 my-1' 
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                           }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                              {p.title}
-                            </h4>
-                            {isOut ? (
-                              <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-1.5 py-0.5 rounded">
-                                Rupture
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-1.5 py-0.5 rounded">
-                                En stock ({p.stockQuantity ?? 10})
+                        >
+                          {/* Thumbnail with hidden badge indicator */}
+                          <div className="relative flex-shrink-0">
+                            <img
+                              src={p.images ? p.images[0] : p.image}
+                              alt={p.title}
+                              className={`w-13 h-13 object-cover rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${
+                                isHidden ? 'opacity-60 grayscale-[40%]' : isOut ? 'grayscale opacity-75' : ''
+                              }`}
+                            />
+                            {isHidden && (
+                              <span 
+                                className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-md"
+                                title="Article masqué aux clients"
+                              >
+                                <EyeOff className="w-3 h-3" />
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[11px] font-bold text-brand-orange">
-                              {formatPrice(p.price)}
-                            </span>
-                            <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                              {p.category}
-                            </span>
-                            {imgCount > 1 && (
-                              <span className="text-[10px] text-sky-500 font-semibold">
-                                🖼️ {imgCount} photos
+                          {/* Product Info */}
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-xs">
+                                {p.title}
+                              </h4>
+
+                              {/* Visibility Status Badge */}
+                              {isHidden ? (
+                                <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1 border border-amber-200 dark:border-amber-900">
+                                  <EyeOff className="w-2.5 h-2.5" />
+                                  Masqué
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-md flex items-center gap-1 border border-emerald-200 dark:border-emerald-900">
+                                  <Eye className="w-2.5 h-2.5" />
+                                  En ligne
+                                </span>
+                              )}
+
+                              {/* Stock Badge */}
+                              {isOut ? (
+                                <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900">
+                                  Rupture
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md">
+                                  Stock: {p.stockQuantity ?? 10}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[11px] font-extrabold text-brand-orange">
+                                {formatPrice(p.price)}
                               </span>
-                            )}
+                              <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                {p.category}
+                              </span>
+                              {imgCount > 1 && (
+                                <span className="text-[10px] text-sky-500 font-semibold hidden sm:inline">
+                                  🖼️ {imgCount} photos
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Quick Action Buttons */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            
+                            {/* Visibility Toggle Button: Masquer / Réafficher */}
+                            <button
+                              type="button"
+                              onClick={() => onToggleProductVisibility && onToggleProductVisibility(p.id)}
+                              className={`p-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                                isHidden
+                                  ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                  : 'bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
+                              }`}
+                              title={isHidden ? "Article masqué. Cliquer pour réafficher dans la boutique" : "Article en ligne. Cliquer pour masquer de la boutique sans supprimer"}
+                            >
+                              {isHidden ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span className="text-[11px] hidden md:inline">Réafficher</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span className="text-[11px] hidden md:inline">Masquer</span>
+                                </>
+                              )}
+                            </button>
+
+                            {/* Quick Stock Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => onToggleProductStock && onToggleProductStock(p.id)}
+                              className={`p-2 rounded-xl text-xs font-bold transition-all hidden sm:flex items-center gap-1 active:scale-95 ${
+                                isOut
+                                  ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:bg-slate-800 dark:text-slate-300'
+                              }`}
+                              title={isOut ? "Marquer comme En Stock (10 unités)" : "Marquer comme Rupture de Stock"}
+                            >
+                              <span className="text-[11px]">{isOut ? '+ Stock' : 'Rupture'}</span>
+                            </button>
+
+                            {/* Permanent Deletion Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Supprimer définitivement "${p.title}" du catalogue ?\n\nAstuce : Si vous souhaitez simplement ne pas l'afficher aux clients pour l'instant, utilisez plutôt le bouton 'Masquer'.`)) {
+                                  onDeleteProduct(p.id);
+                                }
+                              }}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors active:scale-95"
+                              title="Supprimer définitivement du catalogue"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Supprimer "${p.title}" du catalogue ?`)) {
-                              onDeleteProduct(p.id);
-                            }
-                          }}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                          title="Supprimer du catalogue"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
       </div>
