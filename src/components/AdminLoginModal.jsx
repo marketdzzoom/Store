@@ -212,10 +212,10 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
                   disabled={!isAuthorized || lockoutInfo.isLocked || isVerifying || isCheckingSecurity}
                   value={pin}
                   onChange={(e) => { setPin(e.target.value); setError(''); }}
-                  placeholder="Ex: DZ2026"
+                  placeholder="••••••••"
                   className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold text-center tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                   autoFocus
-                  maxLength={12}
+                  maxLength={40}
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"

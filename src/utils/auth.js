@@ -3,34 +3,20 @@
  * Zoom Market Dz Security Architecture
  */
 
-const ADMIN_PIN_HASH_KEY = 'zoom_market_admin_pin_hash_v3';
-const FAILED_ATTEMPTS_KEY = 'zoom_market_auth_failures_v3';
-const LOCKOUT_EXPIRY_KEY = 'zoom_market_auth_lockout_until_v3';
+const ADMIN_PIN_HASH_KEY = 'zoom_market_admin_pin_hash_v4';
+const FAILED_ATTEMPTS_KEY = 'zoom_market_auth_failures_v4';
+const LOCKOUT_EXPIRY_KEY = 'zoom_market_auth_lockout_until_v4';
 
 // Salt for hash generation
 const AUTH_SALT = 'ZOOM_MARKET_DZ_SECURE_SALT_2026_!@#';
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes lockout
 
-// Precomputed SHA-256 Hashes with AUTH_SALT:
-// 'DZ2026': 1d4f696508f43db8d84a47d72d20c7d7b49c03c909c5a8983bd261fae76e7d64
-// 'dz2026': 087d08192a6609a0c91be340c80631db5bb2286b63188df17a1db0f6eec42e71
-// '2026DZ': 871aadb0bed5a128ffe174cb391c1bb9894187bed5e66f7cec1642db7d088010
-// '2026dz': 92c4e81a8b061f8809a7722f369bbfcc01c33f4bdf483fab4e16d5964b552825
-// Precomputed SHA-256 Hashes with AUTH_SALT:
-// 'DZ2026': 1d4f696508f43db8d84a47d72d20c7d7b49c03c909c5a8983bd261fae76e7d64
-// 'dz2026': 087d08192a6609a0c91be340c80631db5bb2286b63188df17a1db0f6eec42e71
-// 'Dz2026': 66f39554cbd816c6f484e3a9beef735c732c59c41d0b2ad2d79cbe95432211be
-// '2026DZ': 871aadb0bed5a128ffe174cb391c1bb9894187bed5e66f7cec1642db7d088010
-// '2026dz': 92c4e81a8b061f8809a7722f369bbfcc01c33f4bdf483fab4e16d5964b552825
-// '2026':   89e40f2b84d61835c41c577e443b13eaebeb678174e99e85b691511cc6d7303d
+// Cryptographically precomputed SHA-256 salted hashes for authorized credentials
 const DEFAULT_ALLOWED_HASHES = [
-  '1d4f696508f43db8d84a47d72d20c7d7b49c03c909c5a8983bd261fae76e7d64', // DZ2026
-  '087d08192a6609a0c91be340c80631db5bb2286b63188df17a1db0f6eec42e71', // dz2026
-  '66f39554cbd816c6f484e3a9beef735c732c59c41d0b2ad2d79cbe95432211be', // Dz2026
-  '871aadb0bed5a128ffe174cb391c1bb9894187bed5e66f7cec1642db7d088010', // 2026DZ
-  '92c4e81a8b061f8809a7722f369bbfcc01c33f4bdf483fab4e16d5964b552825', // 2026dz
-  '89e40f2b84d61835c41c577e443b13eaebeb678174e99e85b691511cc6d7303d'  // 2026
+  '23d364308ad831f0d7233fdf259ed330464d05179a92ae78ff37c4ae226f93d4', // Secure Alphanumeric Passphrase
+  '70eddaa16f4189e3dc285043b0626c72dcabee044510c7afbb425a7c48b48f91', // High-Entropy 6-digit PIN
+  '69c9bd54d5c2b112504d819a30a53b2dec19a0fe47f8c773a478a856caf019be'  // Alternative Secure Passphrase
 ];
 
 /**
@@ -127,14 +113,13 @@ export async function verifyAdminPin(enteredPin) {
 
   const cleanPin = enteredPin.trim();
   const enteredHash = await hashPin(cleanPin);
-  const upperHash = await hashPin(cleanPin.toUpperCase());
   
   // Custom saved PIN hash in localStorage if modified by the admin
   const storedCustomHash = localStorage.getItem(ADMIN_PIN_HASH_KEY);
 
-  const isValid = (storedCustomHash && (enteredHash === storedCustomHash || upperHash === storedCustomHash))
-    || DEFAULT_ALLOWED_HASHES.includes(enteredHash)
-    || DEFAULT_ALLOWED_HASHES.includes(upperHash);
+  const isValid = storedCustomHash
+    ? (enteredHash === storedCustomHash || DEFAULT_ALLOWED_HASHES.includes(enteredHash))
+    : DEFAULT_ALLOWED_HASHES.includes(enteredHash);
 
   if (isValid) {
     resetFailedAttempts();
