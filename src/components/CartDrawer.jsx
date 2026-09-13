@@ -40,12 +40,13 @@ export default function CartDrawer({
   onClearCart,
   onOrderSuccess,
   emailConfig,
-  lang = 'fr'
+  lang = 'fr',
+  initialStep = 1
 }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
   // Checkout Step: 1 = Cart Review, 2 = Shipping & Confirmation
-  const [checkoutStep, setCheckoutStep] = useState(1);
+  const [checkoutStep, setCheckoutStep] = useState(initialStep);
 
   const [selectedWilayaCode, setSelectedWilayaCode] = useState('16'); // Default 16 - Alger
   const [fullName, setFullName] = useState('');
@@ -63,10 +64,11 @@ export default function CartDrawer({
 
   useEffect(() => {
     if (isOpen) {
+      setCheckoutStep(initialStep);
       setFormOpenedAt(Date.now());
       setSecurityError('');
     }
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
 
   // Get current selected wilaya object
   const currentWilaya = WILAYAS.find(w => w.code === selectedWilayaCode) || WILAYAS[15];
@@ -405,6 +407,46 @@ export default function CartDrawer({
                     <span className="text-xs font-semibold text-slate-500">
                       {cartItems.length} {t.selectedArticles}
                     </span>
+                  </div>
+
+                  {/* Visual Items Recap in Step 2 */}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {t.yourOrder}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutStep(1)}
+                        className="text-[11px] font-bold text-brand-orange hover:underline"
+                      >
+                        {t.modify}
+                      </button>
+                    </div>
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
+                      {cartItems.map((item) => (
+                        <div key={item.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <img
+                              src={item.images?.[0] || item.image}
+                              alt={item.title}
+                              className="w-10 h-10 rounded-lg object-cover bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px] sm:text-xs">
+                                {lang === 'ar' && item.titleAr ? item.titleAr : item.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                Qté: {item.quantity} × {formatPrice(item.price)}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="font-black text-slate-900 dark:text-white flex-shrink-0 text-xs">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <form onSubmit={handleSubmitOrder} className="space-y-3.5">

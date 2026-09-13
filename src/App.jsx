@@ -120,6 +120,7 @@ export default function App() {
 
   // Modal States
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartInitialStep, setCartInitialStep] = useState(1);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -166,6 +167,12 @@ export default function App() {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
     handleAddToCart(product, quantity);
     setQuickViewProduct(null);
+    setCartInitialStep(2); // Directly jump to shipping & confirmation step!
+    setIsCartOpen(true);
+  };
+
+  const handleOpenCart = (step = 1) => {
+    setCartInitialStep(step);
     setIsCartOpen(true);
   };
 
@@ -254,7 +261,7 @@ export default function App() {
         setSelectedCategory={setSelectedCategory}
         categories={CATEGORIES}
         cartCount={cartTotalItemsCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => handleOpenCart(1)}
         onOpenAdmin={() => setIsAdminOpen(true)}
         onOpenEmailConfig={() => setIsEmailConfigOpen(true)}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
@@ -319,6 +326,7 @@ export default function App() {
                   key={product.id}
                   product={product}
                   onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
                   onQuickView={setQuickViewProduct}
                   lang={lang}
                 />
@@ -350,6 +358,7 @@ export default function App() {
       {/* Cart & Checkout Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
+        initialStep={cartInitialStep}
         onClose={() => setIsCartOpen(false)}
         cartItems={cart}
         onUpdateQuantity={handleUpdateQuantity}
@@ -415,7 +424,7 @@ export default function App() {
       {/* Floating Mobile Bottom Navigation */}
       <MobileBottomNav
         cartCount={cartTotalItemsCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => handleOpenCart(1)}
         onOpenAdmin={() => setIsAdminOpen(true)}
         isAdminLoggedIn={isAdminLoggedIn}
         lang={lang}

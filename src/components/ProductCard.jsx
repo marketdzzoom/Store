@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Eye, Star, Check, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, Plus, Eye, Star, Check, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 
-export default function ProductCard({ product, onAddToCart, onQuickView, lang = 'fr' }) {
+export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickView, lang = 'fr' }) {
   const [added, setAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -17,6 +17,16 @@ export default function ProductCard({ product, onAddToCart, onQuickView, lang = 
     onAddToCart(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleOrder = (e) => {
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    if (onBuyNow) {
+      onBuyNow(product, 1);
+    } else {
+      onAddToCart(product);
+    }
   };
 
   const discountPercent = product.oldPrice 
@@ -117,12 +127,12 @@ export default function ProductCard({ product, onAddToCart, onQuickView, lang = 
         </div>
       </div>
 
-      {/* Card Footer: Price & Add to Cart */}
-      <div className="p-4 sm:p-5 pt-0 mt-auto border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-3">
-        <div>
+      {/* Card Footer: Price & Direct Order CTA */}
+      <div className="p-4 sm:p-5 pt-0 mt-auto border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <span className="text-xs text-slate-400 block -mb-0.5 font-medium">{t.price}</span>
-          <div className="flex items-baseline gap-2">
-            <span className="font-extrabold text-slate-900 dark:text-white text-lg sm:text-xl">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="font-extrabold text-slate-900 dark:text-white text-base sm:text-xl">
               {formatPrice(product.price)}
             </span>
             {product.oldPrice && (
@@ -133,31 +143,44 @@ export default function ProductCard({ product, onAddToCart, onQuickView, lang = 
           </div>
         </div>
 
-        <button
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md ${
-            isOutOfStock
-              ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
-              : added
-              ? 'bg-emerald-600 text-white'
-              : 'bg-brand-navy hover:bg-brand-orange text-white dark:bg-brand-orange dark:hover:bg-brand-orange-hover'
-          }`}
-        >
-          {isOutOfStock ? (
-            <span>{t.indisponible}</span>
-          ) : added ? (
-            <>
-              <Check className="w-4 h-4" />
-              <span>{t.added}</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline">{t.addToCart}</span>
-            </>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Quick Add icon button */}
+          {!isOutOfStock && (
+            <button
+              type="button"
+              onClick={handleAdd}
+              className={`p-2 sm:p-2.5 rounded-xl transition-all active:scale-95 border ${
+                added
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+              title={t.addToCart}
+            >
+              {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            </button>
           )}
-        </button>
+
+          {/* Main Direct Order button */}
+          <button
+            type="button"
+            onClick={handleOrder}
+            disabled={isOutOfStock}
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md ${
+              isOutOfStock
+                ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
+                : 'bg-brand-orange hover:bg-brand-orange-hover text-white shadow-brand-orange/20'
+            }`}
+          >
+            {isOutOfStock ? (
+              <span>{t.indisponible}</span>
+            ) : (
+              <>
+                <ShoppingBag className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">{t.orderNow}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
