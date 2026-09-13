@@ -305,13 +305,13 @@ export default function AdminModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
       <div 
-        className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col"
+        className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-3xl w-full max-h-[94vh] sm:max-h-[90vh] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-5 bg-brand-navy text-white flex items-center justify-between">
+        <div className="p-3.5 sm:p-5 bg-brand-navy text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Package className="w-5 h-5 text-brand-orange" />
             <div>
@@ -384,7 +384,7 @@ export default function AdminModal({
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-3 sm:p-5 overflow-y-auto flex-1 overflow-x-hidden">
           
           {/* TAB 1: CLIENT ORDERS LISTING WITH DATE & MONTH FILTERS */}
           {activeTab === 'orders' && (
@@ -1219,7 +1219,7 @@ export default function AdminModal({
                     </button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto pr-1">
+                  <div className="space-y-2.5 max-h-[60vh] sm:max-h-96 overflow-y-auto pr-1">
                     {displayedProducts.map((p) => {
                       const isHidden = p.isVisible === false;
                       const isOut = p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية';
@@ -1228,124 +1228,125 @@ export default function AdminModal({
                       return (
                         <div 
                           key={p.id} 
-                          className={`py-3 px-2 sm:px-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${
+                          className={`p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all border ${
                             isHidden 
-                              ? 'bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 my-1' 
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                              ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50' 
+                              : 'bg-slate-50/70 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                         >
-                          {/* Thumbnail with hidden badge indicator */}
-                          <div className="relative flex-shrink-0">
-                            <img
-                              src={p.images ? p.images[0] : p.image}
-                              alt={p.title}
-                              className={`w-13 h-13 object-cover rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${
-                                isHidden ? 'opacity-60 grayscale-[40%]' : isOut ? 'grayscale opacity-75' : ''
-                              }`}
-                            />
-                            {isHidden && (
-                              <span 
-                                className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-md"
-                                title="Article masqué aux clients"
-                              >
-                                <EyeOff className="w-3 h-3" />
-                              </span>
-                            )}
-                          </div>
+                          {/* Top row on mobile, Left col on desktop */}
+                          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                            {/* Fixed image container strictly locked to 56px x 56px */}
+                            <div className="relative w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] max-w-[3.5rem] max-h-[3.5rem] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                              <img
+                                src={p.images ? p.images[0] : p.image}
+                                alt={p.title}
+                                className={`w-full h-full object-cover ${
+                                  isHidden ? 'opacity-50 grayscale-[50%]' : isOut ? 'grayscale opacity-70' : ''
+                                }`}
+                                loading="lazy"
+                              />
+                              {isHidden && (
+                                <span 
+                                  className="absolute top-1 right-1 bg-amber-500 text-white p-0.5 rounded-full shadow"
+                                  title="Article masqué aux clients"
+                                >
+                                  <EyeOff className="w-2.5 h-2.5" />
+                                </span>
+                              )}
+                            </div>
 
-                          {/* Product Info */}
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-xs">
+                            {/* Info */}
+                            <div className="flex-1 min-w-0 text-left">
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate" title={p.title}>
                                 {p.title}
                               </h4>
 
-                              {/* Visibility Status Badge */}
-                              {isHidden ? (
-                                <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1 border border-amber-200 dark:border-amber-900">
-                                  <EyeOff className="w-2.5 h-2.5" />
-                                  Masqué
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                <span className="text-xs font-black text-brand-orange">
+                                  {formatPrice(p.price)}
                                 </span>
-                              ) : (
-                                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-md flex items-center gap-1 border border-emerald-200 dark:border-emerald-900">
-                                  <Eye className="w-2.5 h-2.5" />
-                                  En ligne
-                                </span>
-                              )}
 
-                              {/* Stock Badge */}
-                              {isOut ? (
-                                <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900">
-                                  Rupture
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700/60 px-1.5 py-0.5 rounded font-semibold">
+                                  {p.category}
                                 </span>
-                              ) : (
-                                <span className="text-[10px] font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md">
-                                  Stock: {p.stockQuantity ?? 10}
-                                </span>
-                              )}
-                            </div>
 
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[11px] font-extrabold text-brand-orange">
-                                {formatPrice(p.price)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                {p.category}
-                              </span>
-                              {imgCount > 1 && (
-                                <span className="text-[10px] text-sky-500 font-semibold hidden sm:inline">
-                                  🖼️ {imgCount} photos
-                                </span>
-                              )}
+                                {isHidden ? (
+                                  <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-amber-200 dark:border-amber-900 whitespace-nowrap">
+                                    <EyeOff className="w-2.5 h-2.5" />
+                                    Masqué
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-900 whitespace-nowrap">
+                                    <Eye className="w-2.5 h-2.5" />
+                                    En ligne
+                                  </span>
+                                )}
+
+                                {isOut ? (
+                                  <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900 whitespace-nowrap">
+                                    Rupture
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold bg-slate-200/80 text-slate-700 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                    Stock : {p.stockQuantity ?? 10}
+                                  </span>
+                                )}
+
+                                {imgCount > 1 && (
+                                  <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold hidden sm:inline">
+                                    🖼️ {imgCount} photos
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Quick Action Buttons */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            
-                            {/* Visibility Toggle Button: Masquer / Réafficher */}
+                          {/* Actions: Full-width toolbar on smartphone, inline on desktop */}
+                          <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto">
+                            {/* Visibility Toggle Button */}
                             <button
                               type="button"
                               onClick={() => onToggleProductVisibility && onToggleProductVisibility(p.id)}
-                              className={`p-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ${
                                 isHidden
                                   ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                                  : 'bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
+                                  : 'bg-white hover:bg-amber-50 hover:text-amber-800 text-slate-700 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
                               }`}
-                              title={isHidden ? "Article masqué. Cliquer pour réafficher dans la boutique" : "Article en ligne. Cliquer pour masquer de la boutique sans supprimer"}
+                              title={isHidden ? "Article masqué. Cliquer pour réafficher dans la boutique" : "Article en ligne. Cliquer pour masquer de la boutique"}
                             >
                               {isHidden ? (
                                 <>
                                   <Eye className="w-3.5 h-3.5" />
-                                  <span className="text-[11px] hidden md:inline">Réafficher</span>
+                                  <span>Réafficher</span>
                                 </>
                               ) : (
                                 <>
                                   <EyeOff className="w-3.5 h-3.5" />
-                                  <span className="text-[11px] hidden md:inline">Masquer</span>
+                                  <span>Masquer</span>
                                 </>
                               )}
                             </button>
 
-                            {/* Quick Stock Toggle Button */}
+                            {/* Stock Toggle Button */}
                             <button
                               type="button"
                               onClick={() => onToggleProductStock && onToggleProductStock(p.id)}
-                              className={`p-2 rounded-xl text-xs font-bold transition-all hidden sm:flex items-center gap-1 active:scale-95 ${
+                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 active:scale-95 border ${
                                 isOut
-                                  ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:bg-slate-800 dark:text-slate-300'
+                                  ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-white text-slate-700 hover:bg-red-50 hover:text-red-700 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                               }`}
                               title={isOut ? "Marquer comme En Stock (10 unités)" : "Marquer comme Rupture de Stock"}
                             >
-                              <span className="text-[11px]">{isOut ? '+ Stock' : 'Rupture'}</span>
+                              <span>{isOut ? '+ En Stock' : 'Rupture'}</span>
                             </button>
 
-                            {/* Permanent Deletion Button */}
+                            {/* Permanent Delete Button */}
                             <button
                               type="button"
                               onClick={() => {
-                                if (window.confirm(`Supprimer définitivement "${p.title}" du catalogue ?\n\nAstuce : Si vous souhaitez simplement ne pas l'afficher aux clients pour l'instant, utilisez plutôt le bouton 'Masquer'.`)) {
+                                if (window.confirm(`Supprimer définitivement "${p.title}" du catalogue ?\n\nAstuce : Si vous souhaitez simplement ne plus l'afficher aux clients pour l'instant, utilisez plutôt le bouton 'Masquer'.`)) {
                                   onDeleteProduct(p.id);
                                 }
                               }}
