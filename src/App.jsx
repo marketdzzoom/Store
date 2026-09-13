@@ -120,7 +120,6 @@ export default function App() {
 
   // Modal States
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartInitialStep, setCartInitialStep] = useState(1);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -171,12 +170,10 @@ export default function App() {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
     handleAddToCart(product, quantity, options);
     setQuickViewProduct(null);
-    setCartInitialStep(2); // Directly jump to shipping & confirmation step!
     setIsCartOpen(true);
   };
 
-  const handleOpenCart = (step = 1) => {
-    setCartInitialStep(step);
+  const handleOpenCart = () => {
     setIsCartOpen(true);
   };
 
@@ -414,7 +411,6 @@ export default function App() {
       {/* Cart & Checkout Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
-        initialStep={cartInitialStep}
         onClose={() => setIsCartOpen(false)}
         cartItems={cart}
         onUpdateQuantity={handleUpdateQuantity}

@@ -12,11 +12,10 @@ import {
   MapPin, 
   User, 
   Phone, 
-  ArrowRight, 
-  ArrowLeft, 
   ShieldCheck, 
   CheckCircle2,
-  ShieldAlert
+  ShieldAlert,
+  Zap
 } from 'lucide-react';
 import { WILAYAS } from '../data/wilayas';
 import { 
@@ -47,13 +46,9 @@ export default function CartDrawer({
   onClearCart,
   onOrderSuccess,
   emailConfig,
-  lang = 'fr',
-  initialStep = 1
+  lang = 'fr'
 }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
-
-  // Checkout Step: 1 = Cart Review, 2 = Shipping & Confirmation
-  const [checkoutStep, setCheckoutStep] = useState(initialStep);
 
   const [selectedWilayaCode, setSelectedWilayaCode] = useState('16'); // Default 16 - Alger
   const [fullName, setFullName] = useState('');
@@ -72,21 +67,20 @@ export default function CartDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      setCheckoutStep(initialStep);
       setFormOpenedAt(Date.now());
       setSecurityError('');
     }
-  }, [isOpen, initialStep]);
+  }, [isOpen]);
 
   // Get current selected wilaya object
   const currentWilaya = WILAYAS.find(w => w.code === selectedWilayaCode) || WILAYAS[15];
   const shippingFee = currentWilaya ? currentWilaya.fee : 400;
 
-  // Calculate Subtotal
+  // Calculate Subtotal & Total
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal + shippingFee;
 
-  // Validate form fields for Step 2 with strict Sanitization and Anti-Fake checks
+  // Validate form fields with strict Algerian phone & sanitization checks
   const validateForm = () => {
     const errs = {};
     const cleanName = sanitizeText(fullName, 100).trim();
@@ -94,19 +88,19 @@ export default function CartDrawer({
     const cleanPhoneBackup = sanitizePhone(phoneBackup);
     const cleanAddress = sanitizeText(address, 250).trim();
 
-    // 1. Nom & Prénom: Minimum 3 characters, must contain actual letters (Latin or Arabic), not only numbers/symbols
+    // 1. Nom & Prénom: Minimum 3 characters, must contain actual letters
     if (!cleanName || cleanName.length < 3 || !/[\p{L}]/u.test(cleanName)) {
       errs.fullName = t.errFullName || (lang === 'ar' ? 'يرجى كتابة الاسم واللقب (3 أحرف على الأقل)' : 'Le nom et prénom sont obligatoires (au moins 3 lettres).');
     }
 
-    // 2. Téléphone principal: Mandatory, strictly 10 digits starting with 05/06/07 (or landlines), anti-fake sequence & repeating check
+    // 2. Téléphone principal: Mandatory, DZ format 05/06/07
     if (!cleanPhone) {
       errs.phone = lang === 'ar' ? 'رقم الهاتف مطلوب لتأكيد الطلب' : 'Le numéro de téléphone est obligatoire.';
     } else if (!validateDZPhone(cleanPhone)) {
       errs.phone = t.errPhone || (lang === 'ar' ? 'رقم هاتف جزائري غير صحيح أو تجريبي (05/06/07 + 8 أرقام)' : 'Numéro algérien invalide ou fictif (05, 06 ou 07 + 8 chiffres réels).');
     }
 
-    // 3. Téléphone secondaire (Optionnel): If provided, must also be a valid DZ number and different from primary
+    // 3. Téléphone secondaire (Optionnel): Valid DZ number and different from primary
     if (cleanPhoneBackup) {
       if (!validateDZPhone(cleanPhoneBackup)) {
         errs.phoneBackup = t.errPhoneBackup || (lang === 'ar' ? 'رقم الهاتف الثانوي غير صحيح (05/06/07 + 8 أرقام)' : 'Numéro secondaire invalide (05, 06 ou 07 + 8 chiffres réels).');
@@ -120,7 +114,7 @@ export default function CartDrawer({
       errs.wilaya = t.errWilaya || (lang === 'ar' ? 'يرجى اختيار الولاية' : 'Veuillez sélectionner une wilaya.');
     }
 
-    // 5. Commune & Adresse détaillée: Mandatory, minimum 5 characters
+    // 5. Commune & Adresse détaillée: Mandatory, min 5 chars
     if (!cleanAddress || cleanAddress.length < 5) {
       errs.address = t.errAddress || (lang === 'ar' ? 'يرجى إدخال البلدية والعنوان بالتفصيل (5 أحرف على الأقل)' : 'La commune et l\'adresse détaillée sont obligatoires (au moins 5 caractères).');
     }
@@ -129,7 +123,7 @@ export default function CartDrawer({
     return Object.keys(errs).length === 0;
   };
 
-  // Handle Submit Order via EmailJS / FormSubmit + Anti-Bot & Anti-Spam Security
+  // Handle Submit Order (Express 1-step confirmation)
   const handleSubmitOrder = async (e) => {
     e?.preventDefault?.();
     setSecurityError('');
@@ -141,7 +135,7 @@ export default function CartDrawer({
     const botCheck = verifyHumanSubmission({
       honeypotField: honeypotTrap,
       formOpenedAt,
-      minDurationMs: 1200
+      minDurationMs: 1000
     });
 
     if (!botCheck.isHuman) {
@@ -195,23 +189,15 @@ export default function CartDrawer({
       setAddress('');
       setNotes('');
       setErrors({});
-      setCheckoutStep(1);
     } catch (err) {
       console.error('Order error:', err);
       setLoading(false);
     }
   };
 
+  // Handle WhatsApp Order (Direct 1-step validation & WhatsApp dispatch)
   const handleWhatsAppOrder = () => {
     if (cartItems.length === 0) return;
-
-    // If user is currently in Step 1 (cart review), navigate to Step 2 so customer information can be entered
-    if (checkoutStep === 1) {
-      setCheckoutStep(2);
-      return;
-    }
-
-    // On Step 2, strictly validate: fake orders cannot bypass validation via WhatsApp!
     if (!validateForm()) return;
 
     const sanitizedCustomer = {
@@ -258,23 +244,28 @@ export default function CartDrawer({
       {/* Centered Modal / Sheet Container */}
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full sm:max-w-2xl bg-white dark:bg-slate-900 rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-slideUpModal"
+        className="relative z-10 w-full sm:max-w-2xl bg-white dark:bg-slate-900 rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between max-h-[94vh] sm:max-h-[90vh] overflow-hidden animate-slideUpModal"
       >
         {/* Mobile Pull Handle Indicator */}
         <div className="w-12 h-1.5 bg-slate-300/80 dark:bg-slate-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
 
-        {/* Top Header */}
+        {/* Top Header - Express 1-Step Checkout */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-brand-navy via-slate-900 to-brand-navy text-white flex items-center justify-between shadow-sm flex-shrink-0 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-brand-orange text-white rounded-xl shadow-md">
-              <ShoppingBag className="w-5 h-5" />
+            <div className="p-2.5 bg-brand-orange text-white rounded-xl shadow-md flex items-center justify-center">
+              <Zap className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h2 className="font-extrabold text-base sm:text-lg leading-tight">
-                {checkoutStep === 1 ? t.myCart : t.stepShipping}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-black text-base sm:text-lg leading-tight">
+                  {t.expressCheckout || 'Finaliser ma Commande Express ⚡'}
+                </h2>
+                <span className="hidden sm:inline-block bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/40">
+                  {lang === 'ar' ? 'خطوة واحدة فقط' : '1 seule étape'}
+                </span>
+              </div>
               <p className="text-xs text-slate-300">
-                {cartItems.length} {t.selectedArticles} • Zoom Market Dz
+                {cartItems.length} {t.selectedArticles} • {t.codBadge || 'Paiement à la livraison 🇩🇿'}
               </p>
             </div>
           </div>
@@ -289,42 +280,8 @@ export default function CartDrawer({
           </button>
         </div>
 
-        {/* Step Progress Indicators */}
-        {cartItems.length > 0 && (
-          <div className="bg-slate-100/90 dark:bg-slate-850 border-b border-slate-200/80 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between gap-2 text-xs font-bold flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setCheckoutStep(1)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
-                checkoutStep === 1
-                  ? 'bg-brand-orange text-white shadow-md'
-                  : 'bg-white/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-orange'
-              }`}
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>{t.stepCart}</span>
-              {checkoutStep === 2 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
-            </button>
-
-            <span className="text-slate-400 font-bold px-1">→</span>
-
-            <button
-              type="button"
-              onClick={() => setCheckoutStep(2)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
-                checkoutStep === 2
-                  ? 'bg-brand-orange text-white shadow-md'
-                  : 'bg-white/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-orange'
-              }`}
-            >
-              <Truck className="w-3.5 h-3.5" />
-              <span>{t.stepShipping}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Drawer Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* Drawer Scrollable Content - Single Continuous Page */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
           
           {securityError && (
             <div className="p-3 bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 rounded-xl text-xs font-bold flex items-center gap-2 border border-red-200 dark:border-red-900">
@@ -354,127 +311,74 @@ export default function CartDrawer({
             </div>
           ) : (
             <>
-              {/* STEP 1: CART ITEMS REVIEW */}
-              {checkoutStep === 1 && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      {t.selectedArticles} ({cartItems.length})
+              {/* SECTION 1: ARTICLES DU PANIER & CHOIX DES VARIANTES */}
+              <div className="space-y-3 bg-slate-50 dark:bg-slate-850/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-brand-orange text-white text-[11px] font-black flex items-center justify-center">
+                      1
                     </span>
-                    <button
-                      type="button"
-                      onClick={onClearCart}
-                      className="text-xs font-semibold text-rose-500 hover:text-rose-600 flex items-center gap-1 active:scale-95"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {t.clearCart}
-                    </button>
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wide">
+                      {lang === 'ar' ? 'المنتجات المطلوبة وخياراتك' : 'Vos Articles & Préférences'} ({cartItems.length})
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={onClearCart}
+                    className="text-xs font-semibold text-rose-500 hover:text-rose-600 flex items-center gap-1 active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{t.clearCart}</span>
+                  </button>
+                </div>
 
-                  {/* Items List */}
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800 space-y-2">
-                    {cartItems.map((item) => {
-                      const itemKey = item.cartItemId || item.id;
-                      const itemTitle = (lang === 'ar' && item.titleAr) ? item.titleAr : item.title;
-                      return (
-                        <div key={itemKey} className="pt-2 pb-3 flex items-center justify-between gap-3">
+                {/* Items List with Instant Variant Selection */}
+                <div className="divide-y divide-slate-200/70 dark:divide-slate-800 space-y-3">
+                  {cartItems.map((item) => {
+                    const itemKey = item.cartItemId || item.id;
+                    const itemTitle = (lang === 'ar' && item.titleAr) ? item.titleAr : item.title;
+                    const availableSizes = (item.sizes && item.sizes.length > 0)
+                      ? item.sizes
+                      : ['39', '40', '41', '42', '43', '44', '45'];
+                    const availableColors = (item.colors && item.colors.length > 0)
+                      ? item.colors
+                      : ['Noir', 'Blanc', 'Gris', 'Bleu Marine', 'Rouge'];
+
+                    const hasVariants = (item.sizes && item.sizes.length > 0) || (item.colors && item.colors.length > 0);
+
+                    return (
+                      <div key={itemKey} className="pt-3 first:pt-0 space-y-2.5">
+                        <div className="flex items-start justify-between gap-3">
                           <img
                             src={item.images ? item.images[0] : item.image}
                             alt={itemTitle}
-                            className="w-16 h-16 object-cover rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 shadow-sm"
+                            className="w-16 h-16 sm:w-18 sm:h-18 object-cover rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 shadow-xs"
                           />
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
                               {itemTitle}
                             </h4>
 
-                            {/* Chosen Variants: Size & Color */}
-                            {(item.selectedSize || item.selectedColor) && (
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                {item.selectedSize && (
-                                  <span className="text-[10px] font-bold bg-brand-orange/10 text-brand-orange dark:bg-brand-orange/20 px-2 py-0.5 rounded border border-brand-orange/30">
-                                    {t.size || 'Taille'}: {item.selectedSize}
-                                  </span>
-                                )}
-                                {item.selectedColor && (
-                                  <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded">
-                                    {t.color || 'Couleur'}: {item.selectedColor}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            <p className="text-xs text-brand-orange font-extrabold mt-1">
-                              {formatPrice(item.price)}
-                            </p>
-                            
-                            {/* Interactive Quick Variant Switcher in Cart Step 1 */}
-                            {((item.sizes && item.sizes.length > 0) || (item.colors && item.colors.length > 0)) && (
-                              <div className="mt-2 space-y-2 p-2 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-                                {item.sizes && item.sizes.length > 0 && (
-                                  <div>
-                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      👟 {t.size || 'Pointure / Taille'} : <strong className="text-brand-orange font-black">{item.selectedSize || 'À choisir'}</strong>
-                                    </span>
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      {item.sizes.map((sz) => {
-                                        const isSel = item.selectedSize === sz;
-                                        return (
-                                          <button
-                                            key={sz}
-                                            type="button"
-                                            onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedSize: sz })}
-                                            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all active:scale-95 border ${
-                                              isSel
-                                                ? 'bg-brand-orange text-white border-brand-orange shadow-xs scale-105'
-                                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:border-brand-orange/60'
-                                            }`}
-                                          >
-                                            {sz}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {item.colors && item.colors.length > 0 && (
-                                  <div>
-                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      🎨 {t.color || 'Couleur'} : <strong className="text-brand-orange font-black">{item.selectedColor || 'À choisir'}</strong>
-                                    </span>
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      {item.colors.map((col) => {
-                                        const isSel = item.selectedColor === col;
-                                        return (
-                                          <button
-                                            key={col}
-                                            type="button"
-                                            onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
-                                            className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1 ${
-                                              isSel
-                                                ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-xs scale-105'
-                                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:border-brand-orange/60'
-                                            }`}
-                                          >
-                                            <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
-                                            <span>{col}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-brand-orange font-black">
+                                {formatPrice(item.price)}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                × {item.quantity} =
+                              </span>
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                {formatPrice(item.price * item.quantity)}
+                              </span>
+                            </div>
 
                             {/* Quantity Controls */}
                             <div className="flex items-center gap-2 mt-2">
-                              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                              <div className="flex items-center bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shadow-xs">
                                 <button
                                   type="button"
                                   onClick={() => onUpdateQuantity(itemKey, item.quantity - 1)}
                                   className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white active:scale-90"
+                                  title="Diminuer"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
@@ -485,466 +389,374 @@ export default function CartDrawer({
                                   type="button"
                                   onClick={() => onUpdateQuantity(itemKey, item.quantity + 1)}
                                   className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white active:scale-90"
+                                  title="Augmenter"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
                               </div>
-                            </div>
-                          </div>
 
-                          <div className="text-right flex flex-col items-end justify-between h-16 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => onRemoveItem(itemKey)}
-                              className="text-slate-400 hover:text-red-500 p-1 active:scale-90"
-                              title="Supprimer"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
-                              {formatPrice(item.price * item.quantity)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Trust Banner */}
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
-                    <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                    <div>
-                      <span className="font-extrabold block">{t.codNotice}</span>
-                      <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400 font-normal">
-                        {t.shipping69}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 2: EXPRESS SHIPPING FORM */}
-              {checkoutStep === 2 && (
-                <div className="space-y-4 animate-fadeIn">
-                  
-                  <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => setCheckoutStep(1)}
-                      className="text-xs font-bold text-brand-orange hover:underline flex items-center gap-1 active:scale-95"
-                    >
-                      {lang === 'ar' ? <ArrowRight className="w-3.5 h-3.5" /> : <ArrowLeft className="w-3.5 h-3.5" />}
-                      <span>{t.backToCart}</span>
-                    </button>
-
-                    <span className="text-xs font-semibold text-slate-500">
-                      {cartItems.length} {t.selectedArticles}
-                    </span>
-                  </div>
-
-                  {/* Visual Items Recap in Step 2 */}
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">
-                        {t.yourOrder}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutStep(1)}
-                        className="text-[11px] font-bold text-brand-orange hover:underline"
-                      >
-                        {t.modify}
-                      </button>
-                    </div>
-                    <div className="space-y-1.5 max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
-                      {cartItems.map((item) => (
-                        <div key={item.cartItemId || item.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <img
-                              src={item.images?.[0] || item.image}
-                              alt={item.title}
-                              className="w-10 h-10 rounded-lg object-cover bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 flex-shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px] sm:text-xs">
-                                {lang === 'ar' && item.titleAr ? item.titleAr : item.title}
-                              </p>
                               {(item.selectedSize || item.selectedColor) && (
-                                <p className="text-[10px] font-bold text-brand-orange truncate">
-                                  {[item.selectedSize ? `${t.size || 'Taille'}: ${item.selectedSize}` : '', item.selectedColor ? `${t.color || 'Couleur'}: ${item.selectedColor}` : ''].filter(Boolean).join(' • ')}
-                                </p>
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                  {item.selectedSize && (
+                                    <span className="bg-brand-orange/10 text-brand-orange px-1.5 py-0.5 rounded border border-brand-orange/30">
+                                      {item.selectedSize}
+                                    </span>
+                                  )}
+                                  {item.selectedColor && (
+                                    <span className="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded">
+                                      {item.selectedColor}
+                                    </span>
+                                  )}
+                                </div>
                               )}
-                              <p className="text-[10px] text-slate-400">
-                                Qté: {item.quantity} × {formatPrice(item.price)}
-                              </p>
                             </div>
                           </div>
-                          <span className="font-black text-slate-900 dark:text-white flex-shrink-0 text-xs">
-                            {formatPrice(item.price * item.quantity)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* Dedicated Interactive Specificities & Variants Card for Delivery in Step 2 */}
-                  <div className="p-3.5 bg-gradient-to-br from-brand-orange/5 via-slate-50 to-slate-100 dark:from-brand-orange/10 dark:via-slate-850 dark:to-slate-900 rounded-2xl border-2 border-brand-orange/30 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">👟🎨</span>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-900 dark:text-white">
-                            {t.clientSpecsTitle || 'Spécificités pour le Livreur (Pointure / Couleur)'}
-                          </h4>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                            {t.clientSpecsDesc || 'Précisez votre choix en 1 clic pour que le livreur apporte exactement votre pointure et couleur :'}
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveItem(itemKey)}
+                            className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 active:scale-90 transition-colors"
+                            title="Supprimer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Interactive 1-Tap Variant Selection directly inside the row */}
+                        <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                          
+                          {/* Pointure / Taille */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                <span>👟</span>
+                                <span>{t.size || 'Pointure / Taille'} :</span>
+                              </span>
+                              {item.selectedSize ? (
+                                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                                  <CheckCircle2 className="w-2.5 h-2.5" />
+                                  <span>{item.selectedSize}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-brand-orange bg-brand-orange/10 px-1.5 py-0.5 rounded">
+                                  {lang === 'ar' ? 'حدد المقاس' : 'Choisissez'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {availableSizes.map((sz) => {
+                                const isSel = item.selectedSize === sz;
+                                return (
+                                  <button
+                                    key={sz}
+                                    type="button"
+                                    onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedSize: sz })}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all active:scale-95 border ${
+                                      isSel
+                                        ? 'bg-brand-orange text-white border-brand-orange shadow-xs scale-105 ring-2 ring-brand-orange/30'
+                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60'
+                                    }`}
+                                  >
+                                    {sz}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Couleur */}
+                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                <span>🎨</span>
+                                <span>{t.color || 'Couleur'} :</span>
+                              </span>
+                              {item.selectedColor ? (
+                                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                                  <CheckCircle2 className="w-2.5 h-2.5" />
+                                  <span>{item.selectedColor}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-brand-orange bg-brand-orange/10 px-1.5 py-0.5 rounded">
+                                  {lang === 'ar' ? 'حدد اللون' : 'Choisissez'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {availableColors.map((col) => {
+                                const isSel = item.selectedColor === col;
+                                return (
+                                  <button
+                                    key={col}
+                                    type="button"
+                                    onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${
+                                      isSel
+                                        ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-xs scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
+                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60'
+                                    }`}
+                                  >
+                                    <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                                    <span>{col}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
                         </div>
                       </div>
-                      <span className="text-[10px] font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2 py-0.5 rounded-lg border border-brand-orange/30 flex-shrink-0">
-                        {lang === 'ar' ? 'اختيار فوري' : '1-Clic'}
-                      </span>
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-                    <div className="space-y-3 pt-1">
-                      {cartItems.map((item) => {
-                        const itemKey = item.cartItemId || item.id;
-                        const itemTitle = (lang === 'ar' && item.titleAr) ? item.titleAr : item.title;
-                        const availableSizes = (item.sizes && item.sizes.length > 0)
-                          ? item.sizes
-                          : ['39', '40', '41', '42', '43', '44', '45', 'S', 'M', 'L', 'XL'];
-                        const availableColors = (item.colors && item.colors.length > 0)
-                          ? item.colors
-                          : ['Noir', 'Blanc', 'Gris', 'Bleu Marine', 'Rouge', 'Marron'];
+              {/* SECTION 2: INFORMATIONS DE LIVRAISON */}
+              <div className="space-y-4 bg-white dark:bg-slate-850/90 p-4 rounded-2xl border-2 border-brand-orange/30 shadow-sm">
+                
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-brand-orange text-white text-[11px] font-black flex items-center justify-center">
+                      2
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wide">
+                      {t.shippingInfo || 'Coordonnées de Livraison (Algérie 🇩🇿)'}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>{lang === 'ar' ? 'دفع عند الاستلام' : 'Paiement à la livraison'}</span>
+                  </span>
+                </div>
 
-                        return (
-                          <div
-                            key={itemKey}
-                            className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-750 space-y-2.5 shadow-xs"
-                          >
-                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                              <span className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
-                                {itemTitle}
-                              </span>
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                Qté: {item.quantity}
-                              </span>
-                            </div>
+                {/* Anti-Fake Safety Alert */}
+                <div className="p-2.5 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl flex items-start gap-2 text-xs text-amber-900 dark:text-amber-200">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed font-semibold">
+                    {t.antiFakeNotice}
+                  </p>
+                </div>
 
-                            {/* Pointure / Taille Selector */}
-                            <div>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                                  <span>👟</span>
-                                  <span>{t.size || 'Pointure / Taille'} :</span>
-                                </span>
-                                {item.selectedSize ? (
-                                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{item.selectedSize}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-extrabold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded animate-pulse">
-                                    {lang === 'ar' ? '👈 اضغط لتحديد المقاس' : '👈 Cliquez pour choisir'}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {availableSizes.map((sz) => {
-                                  const isSel = item.selectedSize === sz;
-                                  return (
-                                    <button
-                                      key={sz}
-                                      type="button"
-                                      onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedSize: sz })}
-                                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 border ${
-                                        isSel
-                                          ? 'bg-brand-orange text-white border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/30'
-                                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      {sz}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* Couleur Selector */}
-                            <div className="pt-1">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                                  <span>🎨</span>
-                                  <span>{t.color || 'Couleur'} :</span>
-                                </span>
-                                {item.selectedColor ? (
-                                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{item.selectedColor}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-extrabold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded animate-pulse">
-                                    {lang === 'ar' ? '👈 اضغط لتحديد اللون' : '👈 Cliquez pour choisir'}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {availableColors.map((col) => {
-                                  const isSel = item.selectedColor === col;
-                                  return (
-                                    <button
-                                      key={col}
-                                      type="button"
-                                      onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
-                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${
-                                        isSel
-                                          ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
-                                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
-                                      <span>{col}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                          </div>
-                        );
-                      })}
-                    </div>
+                <form onSubmit={handleSubmitOrder} className="space-y-3.5">
+                  
+                  {/* Anti-Bot Honeypot Hidden Input */}
+                  <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+                    <label htmlFor="website_url_hp">Leave this field blank</label>
+                    <input
+                      type="text"
+                      id="website_url_hp"
+                      name="website_url_hp"
+                      tabIndex="-1"
+                      autoComplete="off"
+                      value={honeypotTrap}
+                      onChange={(e) => setHoneypotTrap(e.target.value)}
+                    />
                   </div>
 
-                  {/* Anti-Fake Trust & Safety Notice */}
-                  <div className="p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
-                    <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] leading-relaxed font-semibold">
-                      {t.antiFakeNotice}
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleSubmitOrder} className="space-y-3.5">
-                    
-                    {/* Anti-Bot Honeypot Hidden Input Field */}
-                    <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
-                      <label htmlFor="website_url_hp">Leave this field blank</label>
+                  {/* Nom & Prénom */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {t.fullName} <span className="text-brand-orange">*</span>
+                    </label>
+                    <div className="relative">
                       <input
                         type="text"
-                        id="website_url_hp"
-                        name="website_url_hp"
-                        tabIndex="-1"
-                        autoComplete="off"
-                        value={honeypotTrap}
-                        onChange={(e) => setHoneypotTrap(e.target.value)}
-                      />
-                    </div>
-
-                    {/* Nom & Prénom */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        {t.fullName} <span className="text-brand-orange">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          maxLength={80}
-                          value={fullName}
-                          onChange={(e) => {
-                            setFullName(e.target.value);
-                            if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
-                          }}
-                          placeholder={t.fullNamePlaceholder}
-                          className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                            errors.fullName ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
-                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
-                        />
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      </div>
-                      {errors.fullName && (
-                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Téléphone Principal */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {t.phone} <span className="text-brand-orange">*</span>
-                        </label>
-                        <div className="flex items-center gap-1.5">
-                          {phoneCarrier && (
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${phoneCarrier.bg} ${phoneCarrier.color}`}>
-                              {phoneCarrier.name}
-                            </span>
-                          )}
-                          {isPhoneValid && (
-                            <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              <span>{t.phoneConforme}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="tel"
-                          maxLength={18}
-                          value={phone}
-                          onChange={(e) => {
-                            setPhone(e.target.value);
-                            if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
-                          }}
-                          placeholder={t.phonePlaceholder}
-                          className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                            errors.phone 
-                              ? 'border-red-500 ring-1 ring-red-500/20' 
-                              : isPhoneValid 
-                              ? 'border-emerald-500 ring-1 ring-emerald-500/20' 
-                              : 'border-slate-200 dark:border-slate-700'
-                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
-                        />
-                        <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isPhoneValid ? 'text-emerald-500' : 'text-slate-400'}`} />
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        {t.phoneHint}
-                      </p>
-                      {errors.phone && (
-                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phone}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Téléphone Secondaire (Optionnel) */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          {t.phoneSecondary}
-                        </label>
-                        <div className="flex items-center gap-1.5">
-                          {backupCarrier && (
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${backupCarrier.bg} ${backupCarrier.color}`}>
-                              {backupCarrier.name}
-                            </span>
-                          )}
-                          {isBackupValid && (
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                              <span>{t.phoneConforme}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="tel"
-                          maxLength={18}
-                          value={phoneBackup}
-                          onChange={(e) => {
-                            setPhoneBackup(e.target.value);
-                            if (errors.phoneBackup) setErrors((prev) => ({ ...prev, phoneBackup: undefined }));
-                          }}
-                          placeholder={t.phoneSecondaryPlaceholder}
-                          className={`w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                            errors.phoneBackup 
-                              ? 'border-red-500 ring-1 ring-red-500/20' 
-                              : isBackupValid 
-                              ? 'border-emerald-500' 
-                              : 'border-slate-200 dark:border-slate-700'
-                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
-                        />
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      </div>
-                      {errors.phoneBackup && (
-                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phoneBackup}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Wilaya Dropdown */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        {t.wilaya} <span className="text-brand-orange">*</span>
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedWilayaCode}
-                          onChange={(e) => {
-                            setSelectedWilayaCode(e.target.value);
-                            if (errors.wilaya) setErrors((prev) => ({ ...prev, wilaya: undefined }));
-                          }}
-                          className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold border ${
-                            errors.wilaya ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
-                          } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none appearance-none cursor-pointer`}
-                        >
-                          {WILAYAS.map((w) => (
-                            <option key={w.code} value={w.code} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {w.name} — ({formatPrice(w.fee)} livraison)
-                            </option>
-                          ))}
-                        </select>
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-orange" />
-                      </div>
-                      {errors.wilaya && (
-                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.wilaya}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Commune & Adresse */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        {t.address} <span className="text-brand-orange">*</span>
-                      </label>
-                      <textarea
-                        maxLength={250}
-                        value={address}
+                        maxLength={80}
+                        value={fullName}
                         onChange={(e) => {
-                          setAddress(e.target.value);
-                          if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
+                          setFullName(e.target.value);
+                          if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
                         }}
-                        rows={2}
-                        placeholder={t.addressPlaceholder}
-                        className={`w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                          errors.address ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
+                        placeholder={t.fullNamePlaceholder}
+                        className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
+                          errors.fullName ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
                         } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
                       />
-                      {errors.address && (
-                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.address}
-                        </p>
-                      )}
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
+                    {errors.fullName && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.fullName}
+                      </p>
+                    )}
+                  </div>
 
-                    {/* Notes */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                        {t.notes}
+                  {/* Téléphone Principal */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {t.phone} <span className="text-brand-orange">*</span>
                       </label>
-                      <input
-                        type="text"
-                        maxLength={200}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder={t.notesPlaceholder}
-                        className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
-                      />
+                      <div className="flex items-center gap-1.5">
+                        {phoneCarrier && (
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${phoneCarrier.bg} ${phoneCarrier.color}`}>
+                            {phoneCarrier.name}
+                          </span>
+                        )}
+                        {isPhoneValid && (
+                          <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>{t.phoneConforme}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </form>
-                </div>
-              )}
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        maxLength={18}
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+                        }}
+                        placeholder={t.phonePlaceholder}
+                        className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
+                          errors.phone 
+                            ? 'border-red-500 ring-1 ring-red-500/20' 
+                            : isPhoneValid 
+                            ? 'border-emerald-500 ring-1 ring-emerald-500/20' 
+                            : 'border-slate-200 dark:border-slate-700'
+                        } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
+                      />
+                      <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isPhoneValid ? 'text-emerald-500' : 'text-slate-400'}`} />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {t.phoneHint}
+                    </p>
+                    {errors.phone && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Téléphone Secondaire (Optionnel) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        {t.phoneSecondary}
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {backupCarrier && (
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${backupCarrier.bg} ${backupCarrier.color}`}>
+                            {backupCarrier.name}
+                          </span>
+                        )}
+                        {isBackupValid && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            <span>{t.phoneConforme}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        maxLength={18}
+                        value={phoneBackup}
+                        onChange={(e) => {
+                          setPhoneBackup(e.target.value);
+                          if (errors.phoneBackup) setErrors((prev) => ({ ...prev, phoneBackup: undefined }));
+                        }}
+                        placeholder={t.phoneSecondaryPlaceholder}
+                        className={`w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
+                          errors.phoneBackup 
+                            ? 'border-red-500 ring-1 ring-red-500/20' 
+                            : isBackupValid 
+                            ? 'border-emerald-500' 
+                            : 'border-slate-200 dark:border-slate-700'
+                        } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
+                      />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    </div>
+                    {errors.phoneBackup && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phoneBackup}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Wilaya Dropdown */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {t.wilaya} <span className="text-brand-orange">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedWilayaCode}
+                        onChange={(e) => {
+                          setSelectedWilayaCode(e.target.value);
+                          if (errors.wilaya) setErrors((prev) => ({ ...prev, wilaya: undefined }));
+                        }}
+                        className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold border ${
+                          errors.wilaya ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
+                        } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none appearance-none cursor-pointer`}
+                      >
+                        {WILAYAS.map((w) => (
+                          <option key={w.code} value={w.code} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {w.name} — ({formatPrice(w.fee)} livraison)
+                          </option>
+                        ))}
+                      </select>
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-orange" />
+                    </div>
+                    {errors.wilaya && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.wilaya}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Commune & Adresse */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {t.address} <span className="text-brand-orange">*</span>
+                    </label>
+                    <textarea
+                      maxLength={250}
+                      value={address}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
+                      }}
+                      rows={2}
+                      placeholder={t.addressPlaceholder}
+                      className={`w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
+                        errors.address ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 dark:border-slate-700'
+                      } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
+                    />
+                    {errors.address && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.address}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                      {t.notes}
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={200}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={t.notesPlaceholder}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
+                    />
+                  </div>
+                </form>
+              </div>
             </>
           )}
         </div>
 
-        {/* Drawer Sticky Footer */}
+        {/* Drawer Sticky Footer - Single Action to Validate */}
         {cartItems.length > 0 && (
-          <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-800 space-y-3 flex-shrink-0 shadow-lg">
+          <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/95 border-t border-slate-200 dark:border-slate-800 space-y-3 flex-shrink-0 shadow-xl">
             
             {/* Price Calculations */}
             <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
@@ -958,60 +770,36 @@ export default function CartDrawer({
               </div>
               <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                 <span>{t.totalToPay}</span>
-                <span className="text-brand-orange text-base sm:text-lg">{formatPrice(total)}</span>
+                <span className="text-brand-orange text-base sm:text-xl font-black">{formatPrice(total)}</span>
               </div>
             </div>
 
-            {/* Actions according to step */}
+            {/* Direct 1-Step Giant Action Buttons */}
             <div className="space-y-2 pt-1">
-              {checkoutStep === 1 ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setCheckoutStep(2)}
-                    className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 px-4 rounded-2xl font-black text-sm shadow-xl hover:shadow-glow transition-all flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <span>{t.proceedToCheckout} ({formatPrice(total)})</span>
-                    {lang === 'ar' ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </button>
+              <button
+                type="button"
+                onClick={handleSubmitOrder}
+                disabled={loading}
+                className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base shadow-xl hover:shadow-glow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5 fill-current" />
+                    <span>{t.confirmOrder} • {formatPrice(total)}</span>
+                  </>
+                )}
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={handleWhatsAppOrder}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{t.orderViaWhatsApp}</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleSubmitOrder}
-                    disabled={loading}
-                    className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 px-4 rounded-2xl font-black text-sm shadow-xl hover:shadow-glow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>{t.confirmOrder} ({formatPrice(total)})</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleWhatsAppOrder}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{t.orderViaWhatsApp}</span>
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>{t.orderViaWhatsApp}</span>
+              </button>
             </div>
           </div>
         )}
