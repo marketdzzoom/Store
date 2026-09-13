@@ -202,26 +202,33 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-brand-navy/70 backdrop-blur-md overflow-hidden animate-fadeIn">
       {/* Backdrop overlay */}
       <div 
         className="absolute inset-0" 
         onClick={onClose} 
       />
 
-      {/* Drawer Container */}
-      <div className={`fixed inset-y-0 ${lang === 'ar' ? 'left-0' : 'right-0'} w-full sm:max-w-lg bg-white dark:bg-slate-900 shadow-2xl flex flex-col justify-between z-50 overflow-hidden`}>
-        
+      {/* Centered Modal / Sheet Container */}
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 w-full sm:max-w-2xl bg-white dark:bg-slate-900 rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-slideUpModal"
+      >
+        {/* Mobile Pull Handle Indicator */}
+        <div className="w-12 h-1.5 bg-slate-300/80 dark:bg-slate-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Top Header */}
-        <div className="p-4 sm:p-5 bg-brand-navy text-white flex items-center justify-between shadow-sm flex-shrink-0">
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-brand-navy via-slate-900 to-brand-navy text-white flex items-center justify-between shadow-sm flex-shrink-0 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-brand-orange text-white rounded-xl shadow-md">
+            <div className="p-2.5 bg-brand-orange text-white rounded-xl shadow-md">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-extrabold text-base sm:text-lg leading-tight">{t.myCart}</h2>
+              <h2 className="font-extrabold text-base sm:text-lg leading-tight">
+                {checkoutStep === 1 ? t.myCart : t.stepShipping}
+              </h2>
               <p className="text-xs text-slate-300">
-                {cartItems.length} {t.selectedArticles}
+                {cartItems.length} {t.selectedArticles} • Zoom Market Dz
               </p>
             </div>
           </div>
@@ -230,6 +237,7 @@ export default function CartDrawer({
             type="button"
             onClick={onClose}
             className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-full transition-colors active:scale-95"
+            title="Fermer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -237,29 +245,30 @@ export default function CartDrawer({
 
         {/* Step Progress Indicators */}
         {cartItems.length > 0 && (
-          <div className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/80 px-4 py-2 flex items-center justify-between text-xs font-bold flex-shrink-0">
+          <div className="bg-slate-100/90 dark:bg-slate-850 border-b border-slate-200/80 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between gap-2 text-xs font-bold flex-shrink-0">
             <button
               type="button"
               onClick={() => setCheckoutStep(1)}
-              className={`flex items-center gap-1.5 py-1 px-3 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
                 checkoutStep === 1
-                  ? 'bg-brand-orange text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-brand-orange'
+                  ? 'bg-brand-orange text-white shadow-md'
+                  : 'bg-white/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-orange'
               }`}
             >
+              <ShoppingBag className="w-3.5 h-3.5" />
               <span>{t.stepCart}</span>
               {checkoutStep === 2 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
             </button>
 
-            <span className="text-slate-400 font-normal">→</span>
+            <span className="text-slate-400 font-bold px-1">→</span>
 
             <button
               type="button"
               onClick={() => setCheckoutStep(2)}
-              className={`flex items-center gap-1.5 py-1 px-3 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
                 checkoutStep === 2
-                  ? 'bg-brand-orange text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-brand-orange'
+                  ? 'bg-brand-orange text-white shadow-md'
+                  : 'bg-white/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-orange'
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
