@@ -113,6 +113,13 @@ export function addOrderToStorage(orderData) {
   };
   const updated = [newOrder, ...currentOrders];
   saveOrders(updated);
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('zoom_market_order_created', { detail: newOrder }));
+    } catch (e) {
+      // Ignore if unsupported
+    }
+  }
   return updated;
 }
 

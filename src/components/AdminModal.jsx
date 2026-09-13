@@ -19,7 +19,8 @@ import {
   Layers,
   DollarSign,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -107,10 +108,53 @@ export default function AdminModal({
   const [formSuccess, setFormSuccess] = useState(false);
   const [soSuccess, setSoSuccess] = useState(false);
 
-  // Load orders when modal is open
+  // Manual Refresh & Sync State
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
+  const [refreshToast, setRefreshToast] = useState(false);
+
+  // Manual refresh function triggered by clicking the rounded arrow button
+  const handleRefreshOrders = () => {
+    setIsRefreshing(true);
+    const freshOrders = getStoredOrders();
+    setOrders(freshOrders);
+    setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
+    setRefreshToast(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 500);
+    setTimeout(() => {
+      setRefreshToast(false);
+    }, 3000);
+  };
+
+  // Load orders when modal is open and auto-listen for new incoming orders
   useEffect(() => {
     if (isOpen) {
       setOrders(getStoredOrders());
+      setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
+
+      // 1. Listen for localStorage changes from another tab/browser window
+      const handleStorageChange = (e) => {
+        if (!e.key || e.key === 'zoom_market_orders_v1') {
+          setOrders(getStoredOrders());
+          setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
+        }
+      };
+
+      // 2. Listen for same-window custom order creation events
+      const handleCustomOrder = () => {
+        setOrders(getStoredOrders());
+        setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
+      };
+
+      window.addEventListener('storage', handleStorageChange);
+      window.addEventListener('zoom_market_order_created', handleCustomOrder);
+
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('zoom_market_order_created', handleCustomOrder);
+      };
     }
   }, [isOpen]);
 
@@ -329,19 +373,30 @@ export default function AdminModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 px-4 pt-3 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab('orders')}
-            className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'orders'
-                ? 'border-brand-orange text-brand-orange bg-white dark:bg-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <ClipboardList className="w-4 h-4 text-brand-orange" />
-            Commandes Clients ({orders.length})
-          </button>
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 px-4 pt-3 overflow-x-auto no-scrollbar items-center">
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setActiveTab('orders')}
+              className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'orders'
+                  ? 'border-brand-orange text-brand-orange bg-white dark:bg-slate-900'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4 text-brand-orange" />
+              <span>Commandes Clients ({orders.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleRefreshOrders}
+              disabled={isRefreshing}
+              className="p-1.5 ml-1 mr-2 text-slate-400 hover:text-brand-orange hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all active:scale-90"
+              title="Actualiser pour charger les nouvelles commandes sans recharger la page (flèche arrondie)"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-brand-orange' : ''}`} />
+            </button>
+          </div>
 
           <button
             type="button"
@@ -398,10 +453,41 @@ export default function AdminModal({
                     Filtrer les Commandes par Période (Mois / Année) & Statut
                   </span>
 
-                  <span className="text-xs font-black text-brand-orange bg-white dark:bg-slate-900 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                    Total Période : {formatPrice(totalPeriodRevenue)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {/* Bouton flèche arrondie pour actualiser sans recharger toute la page */}
+                    <button
+                      type="button"
+                      onClick={handleRefreshOrders}
+                      disabled={isRefreshing}
+                      className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 group"
+                      title="Actualiser pour charger les nouvelles commandes sans recharger la page"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-brand-orange transition-all duration-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                      <span>{isRefreshing ? 'Actualisation...' : 'Actualiser'}</span>
+                    </button>
+
+                    <span className="text-xs font-black text-brand-orange bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      Total Période : {formatPrice(totalPeriodRevenue)}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Notification toast d'actualisation */}
+                {refreshToast && (
+                  <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span className="font-bold">
+                        Commandes actualisées avec succès ({orders.length} commande(s) au total).
+                      </span>
+                    </div>
+                    {lastRefreshedAt && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                        Synchro : {lastRefreshedAt}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   
