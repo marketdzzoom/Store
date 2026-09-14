@@ -167,21 +167,22 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   return (
     <>
       {/* Main Product Quick View Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
         <div 
-          className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-hidden"
+          className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[92vh] md:h-[660px] shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white p-2 rounded-full transition-colors shadow-sm"
+            className="absolute top-4 right-4 z-30 bg-slate-100/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-2 rounded-full transition-colors shadow-md backdrop-blur-xs"
+            aria-label="Fermer"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Left Image Section & Interactive Zoom Container */}
-          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-6 flex flex-col justify-between relative">
+          {/* Left Image Section & Interactive Zoom Container (Fixed & balanced, zero empty void) */}
+          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-5 sm:p-6 flex flex-col justify-between relative md:h-full shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
             {isOutOfStock ? (
               <span className="absolute top-4 left-4 z-10 bg-red-700 text-white text-xs font-extrabold px-3 py-1 rounded-lg uppercase tracking-wider shadow flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
@@ -202,13 +203,13 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
               onClick={() => setIsZoomModalOpen(true)}
-              className="flex-1 flex items-center justify-center py-4 relative cursor-zoom-in overflow-hidden rounded-2xl group"
+              className="flex-1 flex items-center justify-center py-2 relative cursor-zoom-in overflow-hidden rounded-2xl group min-h-[220px] sm:min-h-[280px] md:min-h-0"
             >
               <img
                 src={imgError ? fallbackImg : currentImage}
                 alt={titleText}
                 onError={() => setImgError(true)}
-                className={`max-h-72 w-full object-contain rounded-2xl transition-transform duration-300 ${
+                className={`max-h-64 sm:max-h-72 md:max-h-80 w-full object-contain rounded-2xl transition-transform duration-300 ${
                   isHoveringZoom ? 'scale-125' : 'scale-100'
                 } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
                 style={
@@ -250,20 +251,20 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )}
 
               {/* Hover Zoom Prompt Badge */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
-                <ZoomIn className="w-3.5 h-3.5 text-brand-orange" />
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[10px] font-bold px-3 py-0.5 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
+                <ZoomIn className="w-3 h-3 text-brand-orange" />
                 <span>{t.zoomHint}</span>
               </div>
             </div>
 
             {/* Multiple Image Gallery Thumbnails */}
             {imageList.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2.5 overflow-x-auto no-scrollbar">
+              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-center gap-2 overflow-x-auto no-scrollbar shrink-0">
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
                       selectedImageIndex === idx
                         ? 'border-brand-orange shadow-md scale-105'
                         : 'border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100'
@@ -276,11 +277,12 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
             )}
           </div>
 
-          {/* Right Info Section */}
-          <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-between">
-            <div>
+          {/* Right Info Section with independent scroll & sticky bottom CTA bar */}
+          <div className="md:w-1/2 flex flex-col h-full overflow-hidden relative bg-white dark:bg-slate-900">
+            {/* Scrollable details pane */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4">
               {/* Category & Rating */}
-              <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-brand-orange uppercase tracking-wider">
                   {categoryLabel}
                 </span>
@@ -297,7 +299,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               </h2>
 
               {/* Price */}
-              <div className="flex items-baseline gap-3 my-4">
+              <div className="flex items-baseline gap-3">
                 <span className="text-2xl sm:text-3xl font-black text-brand-navy dark:text-white">
                   {formatPrice(product.price)}
                 </span>
@@ -308,19 +310,19 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 )}
               </div>
 
-              {/* Structured & Impactful Description */}
-              <div className="mb-5">
+              {/* Structured & Impactful Description (without redundant bottom cards) */}
+              <div>
                 <ProductDescription 
                   description={descText} 
                   lang={lang} 
                   showPhoneCTA={true} 
-                  showTrustCards={true} 
+                  showTrustCards={false} 
                 />
               </div>
 
               {/* Product Specificities & Variants: Sizes & Colors */}
               {!isOutOfStock && (product.sizes?.length > 0 || product.colors?.length > 0) && (
-                <div className="space-y-3.5 mb-5">
+                <div className="space-y-3 pt-1">
                   {/* Sizes / Pointures Selection */}
                   {product.sizes && product.sizes.length > 0 && (
                     <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
@@ -395,7 +397,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                                 setSelectedColor(col);
                                 setVariantError('');
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-2 ${
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-1.5 ${
                                 isSelected
                                   ? 'bg-slate-900 dark:bg-brand-orange text-white border-slate-900 dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/40'
                                   : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
@@ -426,7 +428,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
               {/* Quantity Selector */}
               {!isOutOfStock && (
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-4 py-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.quantity}</span>
                   <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
                     <button
@@ -448,42 +450,43 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </div>
               )}
 
-              {/* Features / Stock */}
-              <div className="space-y-2 mb-6 text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl">
+              {/* Unified Compact Assurances & Stock Bar */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap text-xs">
                 {isOutOfStock ? (
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold">
-                    <AlertTriangle className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     <span>{t.outOfStock}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                    <CheckCircle2 className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     <span>{t.inStock} ({product.stockQuantity ?? 10})</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-brand-orange" />
-                  <span>{t.shipping69}</span>
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
+                  <Truck className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                  <span>{t.shipping69 || 'Livraison à domicile'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-navy dark:text-slate-300" />
-                  <span>{t.securePayment}</span>
+
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-brand-navy dark:text-sky-400 shrink-0" />
+                  <span>{t.securePayment || 'Paiement à la livraison'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            {/* Sticky Action CTAs Footer - Always visible without scrolling */}
+            <div className="sticky bottom-0 z-30 p-4 sm:p-5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex flex-col sm:flex-row gap-2.5 shrink-0">
               <button
                 onClick={handleAdd}
                 disabled={isOutOfStock}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 ${
                   isOutOfStock
                     ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
                     : added
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 <ShoppingBag className="w-4 h-4 text-brand-orange" />
@@ -493,10 +496,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               <button
                 onClick={handleBuy}
                 disabled={isOutOfStock}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 ${
+                className={`flex-1 py-3 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 ${
                   isOutOfStock
                     ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
-                    : 'bg-brand-orange hover:bg-brand-orange-hover text-white hover:shadow-glow'
+                    : 'bg-brand-orange hover:bg-brand-orange-hover text-white shadow-brand-orange/30 hover:shadow-glow'
                 }`}
               >
                 {t.buyNow}

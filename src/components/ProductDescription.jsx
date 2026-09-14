@@ -143,24 +143,19 @@ export default function ProductDescription({
       {showPhoneCTA && parsed.phone && (
         <a
           href={`tel:${parsed.phone.replace(/[\s-]/g, '')}`}
-          className="flex items-center justify-between gap-3 p-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-850 border border-amber-200/90 dark:border-slate-700 hover:border-brand-orange text-xs transition-all shadow-2xs hover:shadow-xs group"
+          className="inline-flex items-center justify-between gap-2.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-slate-800 dark:to-slate-850 border border-amber-300/80 dark:border-slate-700 hover:border-brand-orange text-xs transition-all shadow-2xs group w-full"
           title={isRTL ? 'اضغط للاتصال المباشر' : 'Cliquer pour appeler directement'}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-xl bg-brand-orange text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-              <PhoneCall className="w-3.5 h-3.5" />
-            </div>
-            <div className="leading-tight truncate">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">
-                {parsed.phoneLabel || (isRTL ? 'للطلب والاستفسار' : 'Pour commander ou information')} :
-              </span>
-              <span className="font-black text-slate-900 dark:text-white tracking-wide text-xs sm:text-sm">
-                {parsed.phone}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-5 h-5 rounded-lg bg-brand-orange text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+              <PhoneCall className="w-3 h-3" />
+            </span>
+            <span className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+              {parsed.phoneLabel || (isRTL ? 'للطلب والاستفسار' : 'Pour commander')} : <strong className="font-black text-slate-900 dark:text-white">{parsed.phone}</strong>
+            </span>
           </div>
-          <span className="text-[11px] font-extrabold text-brand-orange bg-white dark:bg-slate-700 px-2.5 py-1 rounded-xl border border-brand-orange/20 shadow-2xs group-hover:bg-brand-orange group-hover:text-white transition-colors shrink-0">
-            {isRTL ? 'اتصل الآن 📞' : 'Appeler 📞'}
+          <span className="text-[10px] font-bold text-brand-orange bg-white dark:bg-slate-750 px-2 py-0.5 rounded-lg border border-brand-orange/20 group-hover:bg-brand-orange group-hover:text-white transition-colors shrink-0">
+            {isRTL ? 'اتصل 📞' : 'Appeler 📞'}
           </span>
         </a>
       )}
