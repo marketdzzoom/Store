@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ShoppingBag, Plus, Eye, Star, Check, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
-import { getColorStyle } from '../utils/colors';
+import { getColorStyle, getImageIndexForColor } from '../utils/colors';
 
 export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickView, lang = 'fr' }) {
   const [added, setAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
@@ -43,7 +44,8 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100) 
     : null;
 
-  const primaryImage = (product.images && product.images.length > 0) ? product.images[0] : product.image;
+  const imageList = (product.images && product.images.length > 0) ? product.images : [product.image];
+  const currentImg = imageList[activeImageIndex] || imageList[0] || fallbackImg;
   const fallbackImg = "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=600&q=80";
 
   // Dynamic Arabic Title & Description if provided
@@ -81,7 +83,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
         {/* Product Image Box */}
         <div className="relative aspect-square w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
           <img
-            src={imgError || !primaryImage ? fallbackImg : primaryImage}
+            src={imgError || !currentImg ? fallbackImg : currentImg}
             alt={titleText}
             onError={() => setImgError(true)}
             className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out ${
@@ -152,14 +154,24 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
               <div className="flex items-center gap-1">
                 {product.colors.slice(0, 5).map((col) => {
                   const cStyle = getColorStyle(col);
+                  const matchedIdx = getImageIndexForColor(col, product, imageList);
+                  const isCurrent = activeImageIndex === matchedIdx;
                   return (
-                    <span
+                    <button
                       key={col}
-                      className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 ${
-                        cStyle.isLight ? 'border border-slate-300 dark:border-slate-500' : ''
-                      }`}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex(matchedIdx);
+                      }}
+                      onMouseEnter={() => {
+                        setActiveImageIndex(matchedIdx);
+                      }}
+                      className={`w-3.5 h-3.5 rounded-full inline-block flex-shrink-0 transition-transform duration-150 active:scale-95 ${
+                        isCurrent ? 'ring-2 ring-brand-orange scale-110' : 'hover:scale-125'
+                      } ${cStyle.isLight ? 'border border-slate-300 dark:border-slate-500' : ''}`}
                       style={{ background: cStyle.background }}
-                      title={col}
+                      title={`${col} (Cliquer pour voir)`}
                     />
                   );
                 })}

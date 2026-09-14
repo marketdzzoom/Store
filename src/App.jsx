@@ -340,6 +340,7 @@ export default function App() {
         {selectedCategory === 'Tous' && !searchTerm && (
           <SpecialOfferBanner
             offer={specialOffer}
+            products={products}
             onQuickView={setQuickViewProduct}
             onBuyNow={handleBuyNow}
             lang={lang}

@@ -346,6 +346,9 @@ export default function AdminModal({
           description: p.description || '',
           descriptionAr: p.descriptionAr || p.description || '',
           images: pImages,
+          colors: p.colors || [],
+          sizes: p.sizes || [],
+          colorImageMap: p.colorImageMap || {},
           productId: p.id,
           countdownHours: 24
         };
@@ -517,6 +520,7 @@ export default function AdminModal({
     const defaultFallback = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80";
     const finalImages = allImages.length > 0 ? allImages : [defaultFallback];
 
+    const targetProduct = products.find((p) => p.id === (selectedSoProductId || specialOffer?.productId));
     const updatedOffer = {
       enabled: soEnabled,
       tagline: soTagline.trim() || 'Vente Flash 24H ⚡',
@@ -529,6 +533,9 @@ export default function AdminModal({
       description: soDescription.trim(),
       descriptionAr: soDescriptionAr.trim() || soDescription.trim(),
       images: finalImages,
+      colors: targetProduct?.colors || specialOffer?.colors || [],
+      sizes: targetProduct?.sizes || specialOffer?.sizes || [],
+      colorImageMap: targetProduct?.colorImageMap || specialOffer?.colorImageMap || {},
       productId: selectedSoProductId || specialOffer?.productId || null,
       countdownHours: 24
     };
@@ -1214,7 +1221,7 @@ export default function AdminModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  placeholder="Ex: ✨ Chaussures UGG – Élégance & Confort ✨&#10;&#10;L'alliance parfaite entre confort et style tendance.&#10;&#10;• Conception : Semelle ergonomique ultra-confortable&#10;• Pointures : Du 37 au 40&#10;• Couleurs : Beige, Marron, Noir&#10;&#10;🚚 Livraison : Rapide à domicile&#10;🤝 Paiement : À la réception après vérification&#10;📞 Pour commander : 0663 08 50 69"
+                  placeholder="Ex: ✨ [Nom de l'article] – Qualité & Élégance ✨&#10;&#10;Présentation soignée de votre produit et de ses atouts pour le client.&#10;&#10;• Caractéristique 1 : Description du point fort&#10;• Spécifications : Détails techniques ou de conception&#10;• Couleurs disponibles : Beige, Marron, Noir&#10;&#10;🚚 Livraison : Disponible dans 58 Wilayas à domicile&#10;🤝 Paiement : À la réception après vérification&#10;📞 Pour commander : 0663 08 50 69"
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-normal leading-relaxed"
                   required
                 />

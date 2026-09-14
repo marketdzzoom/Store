@@ -196,3 +196,71 @@ export function getColorStyle(rawColor) {
   // 4. Fallback: Slate dot
   return { background: '#64748B', isLight: false, hex: '#64748B' };
 }
+
+/**
+ * Resolves the corresponding image index for a chosen color variant.
+ * 1. Checks explicit product.colorImageMap
+ * 2. Checks order matching (1st color -> 1st image, 2nd color -> 2nd image)
+ * 3. Checks semantic keyword match in image URLs
+ * 
+ * @param {string} colorName - Name of the selected color (e.g. "Marron", "Noir", "Rouge")
+ * @param {object} product - Product object with colors, images, colorImageMap
+ * @param {string[]} imageList - List of images
+ * @returns {number} 0-based image index
+ */
+export function getImageIndexForColor(colorName, product, imageList = []) {
+  if (!colorName || !product) return 0;
+  const list = (imageList && imageList.length > 0)
+    ? imageList
+    : (product.images && product.images.length > 0 ? product.images : [product.image]);
+
+  if (!list || list.length <= 1) return 0;
+
+  const cleanColor = String(colorName).trim().toLowerCase();
+
+  // 1. Explicit colorImageMap mapping
+  if (product.colorImageMap && typeof product.colorImageMap === 'object') {
+    const directUrl = product.colorImageMap[colorName] || product.colorImageMap[cleanColor];
+    if (directUrl) {
+      const idx = list.findIndex((img) => img === directUrl);
+      if (idx !== -1) return idx;
+    }
+  }
+
+  // 2. Order-based 1-to-1 matching (e.g. 1st color -> 1st image, 2nd color -> 2nd image)
+  if (Array.isArray(product.colors) && product.colors.length > 0) {
+    const colIdx = product.colors.findIndex((c) => String(c).trim().toLowerCase() === cleanColor);
+    if (colIdx !== -1 && colIdx < list.length) {
+      return colIdx;
+    }
+  }
+
+  // 3. Keyword matching in image URLs
+  const words = cleanColor.split(/[\s-]+/).filter((w) => w.length > 2);
+  for (let i = 0; i < list.length; i++) {
+    const imgUrlLower = String(list[i]).toLowerCase();
+    for (const word of words) {
+      if (imgUrlLower.includes(word)) {
+        return i;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Resolves the color associated with a given image index (e.g. when user clicks thumbnail)
+ * @param {number} imageIndex - 0-based index of the active photo
+ * @param {object} product - Product object
+ * @returns {string|null} The matched color name or null
+ */
+export function getColorForImageIndex(imageIndex, product) {
+  if (!product || !Array.isArray(product.colors) || product.colors.length === 0) {
+    return null;
+  }
+  if (imageIndex >= 0 && imageIndex < product.colors.length) {
+    return product.colors[imageIndex];
+  }
+  return null;
+}

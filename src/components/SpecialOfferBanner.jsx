@@ -11,13 +11,34 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS } from '../data/translations';
+import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
 
-export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang = 'fr' }) {
+export default function SpecialOfferBanner({ offer, products = [], onQuickView, onBuyNow, lang = 'fr' }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 35, seconds: 22 });
+
+  const matchedProduct = (products && products.length > 0)
+    ? products.find((p) => p.id === offer?.productId || p.title === offer?.title)
+    : null;
+
+  const offerColors = (offer?.colors && offer.colors.length > 0)
+    ? offer.colors
+    : (matchedProduct?.colors || []);
+
+  const offerSizes = (offer?.sizes && offer.sizes.length > 0)
+    ? offer.sizes
+    : (matchedProduct?.sizes || []);
+
+  const [selectedColor, setSelectedColor] = useState(() => (offerColors.length > 0 ? offerColors[0] : ''));
+
+  useEffect(() => {
+    if (offerColors.length > 0 && (!selectedColor || !offerColors.includes(selectedColor))) {
+      setSelectedColor(offerColors[0]);
+    }
+  }, [offerColors]);
 
   if (!offer || !offer.enabled) return null;
 
@@ -38,12 +59,17 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-play slideshow every 4 seconds
+  // Auto-play slideshow every 4 seconds only if multiple images
   useEffect(() => {
     if (images.length <= 1) return;
     const interval = setInterval(() => {
-      setActiveImageIndex((prev) => (prev + 1) % images.length);
-    }, 4000);
+      setActiveImageIndex((prev) => {
+        const next = (prev + 1) % images.length;
+        const matchedCol = getColorForImageIndex(next, matchedProduct || offer);
+        if (matchedCol) setSelectedColor(matchedCol);
+        return next;
+      });
+    }, 5000);
     return () => clearInterval(interval);
   }, [images.length]);
 
@@ -54,18 +80,44 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
   const titleText = (lang === 'ar' && offer.titleAr) ? offer.titleAr : offer.title;
   const descText = (lang === 'ar' && offer.descriptionAr) ? offer.descriptionAr : offer.description;
 
+  const handleSelectColor = (col) => {
+    setSelectedColor(col);
+    const matchedIdx = getImageIndexForColor(col, matchedProduct || offer, images);
+    if (matchedIdx >= 0 && matchedIdx < images.length) {
+      setActiveImageIndex(matchedIdx);
+    }
+  };
+
+  const handleThumbnailClick = (idx) => {
+    setActiveImageIndex(idx);
+    const matchedCol = getColorForImageIndex(idx, matchedProduct || offer);
+    if (matchedCol) {
+      setSelectedColor(matchedCol);
+    }
+  };
+
   const handleNextImg = (e) => {
     e.stopPropagation();
-    setActiveImageIndex((prev) => (prev + 1) % images.length);
+    setActiveImageIndex((prev) => {
+      const next = (prev + 1) % images.length;
+      const matchedCol = getColorForImageIndex(next, matchedProduct || offer);
+      if (matchedCol) setSelectedColor(matchedCol);
+      return next;
+    });
   };
 
   const handlePrevImg = (e) => {
     e.stopPropagation();
-    setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    setActiveImageIndex((prev) => {
+      const next = (prev - 1 + images.length) % images.length;
+      const matchedCol = getColorForImageIndex(next, matchedProduct || offer);
+      if (matchedCol) setSelectedColor(matchedCol);
+      return next;
+    });
   };
 
   const offerProductObj = {
-    id: offer.productId || 'special-offer-item',
+    id: offer.productId || matchedProduct?.id || 'special-offer-item',
     title: offer.title,
     titleAr: offer.titleAr,
     price: offer.price,
@@ -75,6 +127,9 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
     descriptionAr: offer.descriptionAr,
     image: images[activeImageIndex] || images[0],
     images: images,
+    colors: offerColors,
+    sizes: offerSizes,
+    selectedColor: selectedColor,
     inStock: true,
     badge: offer.tagline || 'Offre Spéciale'
   };
@@ -119,6 +174,43 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
               showTrustCards={false} 
             />
           </div>
+
+          {/* Real Color Swatches Selection if product has colors */}
+          {offerColors.length > 0 && (
+            <div className="flex items-center justify-center lg:justify-start gap-2.5 pt-1 flex-wrap">
+              <span className="text-xs text-slate-300 font-bold flex items-center gap-1.5">
+                <span>🎨</span>
+                <span>{lang === 'ar' ? 'الألوان المتوفرة :' : 'Couleurs disponibles :'}</span>
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {offerColors.map((col) => {
+                  const cStyle = getColorStyle(col);
+                  const isSelected = selectedColor === col;
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => handleSelectColor(col)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 border backdrop-blur-sm ${
+                        isSelected
+                          ? 'bg-white/25 text-white border-brand-orange shadow-lg shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/40'
+                          : 'bg-white/5 text-slate-300 border-white/15 hover:bg-white/10 hover:border-white/30'
+                      }`}
+                      title={`Afficher la photo en ${col}`}
+                    >
+                      <span
+                        className={`w-3 h-3 rounded-full inline-block flex-shrink-0 ${
+                          cStyle.isLight ? 'border border-slate-300' : ''
+                        }`}
+                        style={{ background: cStyle.background }}
+                      />
+                      <span>{col}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Price & Discount Display */}
           <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">
@@ -252,7 +344,7 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
                     key={idx}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveImageIndex(idx);
+                      handleThumbnailClick(idx);
                     }}
                     className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
                       activeImageIndex === idx

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
-import { getColorStyle } from '../utils/colors';
+import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
 
 export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, lang = 'fr' }) {
@@ -55,7 +55,12 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     setZoomLevel(1);
     setImgError(false);
     if (imageList.length > 0) {
-      setSelectedImageIndex((prev) => (prev === 0 ? imageList.length - 1 : prev - 1));
+      setSelectedImageIndex((prev) => {
+        const next = (prev === 0 ? imageList.length - 1 : prev - 1);
+        const col = getColorForImageIndex(next, product);
+        if (col) setSelectedColor(col);
+        return next;
+      });
     }
   };
 
@@ -64,7 +69,12 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     setZoomLevel(1);
     setImgError(false);
     if (imageList.length > 0) {
-      setSelectedImageIndex((prev) => (prev === imageList.length - 1 ? 0 : prev + 1));
+      setSelectedImageIndex((prev) => {
+        const next = (prev === imageList.length - 1 ? 0 : prev + 1);
+        const col = getColorForImageIndex(next, product);
+        if (col) setSelectedColor(col);
+        return next;
+      });
     }
   };
 
@@ -263,7 +273,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedImageIndex(idx)}
+                    onClick={() => {
+                      setSelectedImageIndex(idx);
+                      const matchedColor = getColorForImageIndex(idx, product);
+                      if (matchedColor) {
+                        setSelectedColor(matchedColor);
+                        setVariantError('');
+                      }
+                    }}
                     className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
                       selectedImageIndex === idx
                         ? 'border-brand-orange shadow-md scale-105'
@@ -396,6 +413,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                               onClick={() => {
                                 setSelectedColor(col);
                                 setVariantError('');
+                                const matchedIdx = getImageIndexForColor(col, product, imageList);
+                                if (matchedIdx >= 0 && matchedIdx < imageList.length) {
+                                  setSelectedImageIndex(matchedIdx);
+                                }
                               }}
                               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-1.5 ${
                                 isSelected
