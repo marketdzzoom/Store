@@ -57,11 +57,11 @@ export function parseSmartDescription(raw) {
       continue;
     }
 
-    // 2. Key-Value check: [Emoji]? [Label] : [Value]
+    // 2. Key-Value check: [Emoji]? [Label] : [Value] (Value must not be empty)
     const kvMatch = line.match(/^([\p{Extended_Pictographic}]?\s*)([\p{L}\p{N}\s/'-]{2,30})\s*:\s*(.+)$/u);
-    if (kvMatch && !kvMatch[2].toLowerCase().startsWith('http')) {
+    if (kvMatch && !kvMatch[2].toLowerCase().startsWith('http') && kvMatch[3].trim().length > 0) {
       const icon = kvMatch[1].trim() || null;
-      const key = kvMatch[2].trim().replace(/^[•\-*✓✔►▸+]\s*/, '');
+      const key = kvMatch[2].trim().replace(/^[•\-*✓✔►▸+]\s*/u, '');
       const value = kvMatch[3].trim();
 
       blocks.push({
@@ -75,19 +75,45 @@ export function parseSmartDescription(raw) {
       continue;
     }
 
-    // 3. Bullet item check (•, -, *, ✓, numbers)
-    const bulletMatch = line.match(/^([•\-*✓✔►▸+]\s*|\d+\.\s+)(.+)$/u);
-    if (bulletMatch) {
+    // 3. Subheading check: e.g. "Couleurs disponibles :", "- Tailles :", "المواصفات :"
+    const cleanLineForHeader = line.replace(/^[•\-*✓✔►▸+]\s*/u, '').trim();
+    if (/^[\p{L}\p{N}\s/'-]{2,35}\s*:$/u.test(cleanLineForHeader)) {
+      const headingText = cleanLineForHeader.replace(/:\s*$/, '').trim();
       blocks.push({
         id: `b-${i}`,
-        type: 'bullet',
-        content: bulletMatch[2].trim(),
+        type: 'subheading',
+        content: headingText,
         isRTL
       });
       continue;
     }
 
-    // 4. Leading emoji item check
+    // 4. Bullet item check (•, -, *, ✓, numbers)
+    const bulletMatch = line.match(/^([•\-*✓✔►▸+]\s*|\d+\.\s+)(.+)$/u);
+    if (bulletMatch) {
+      const rawContent = bulletMatch[2].trim();
+      const emojiInBullet = rawContent.match(/^([\p{Extended_Pictographic}])\s*(.+)$/u);
+      if (emojiInBullet) {
+        blocks.push({
+          id: `b-${i}`,
+          type: 'bullet',
+          icon: emojiInBullet[1],
+          content: emojiInBullet[2].trim(),
+          isRTL
+        });
+      } else {
+        blocks.push({
+          id: `b-${i}`,
+          type: 'bullet',
+          icon: null,
+          content: rawContent,
+          isRTL
+        });
+      }
+      continue;
+    }
+
+    // 5. Leading emoji item check
     const emojiMatch = line.match(/^([\p{Extended_Pictographic}])\s*(.+)$/u);
     if (emojiMatch) {
       blocks.push({
@@ -100,7 +126,7 @@ export function parseSmartDescription(raw) {
       continue;
     }
 
-    // 5. Standard paragraph
+    // 6. Standard paragraph
     blocks.push({
       id: `b-${i}`,
       type: 'paragraph',
@@ -129,8 +155,12 @@ export function formatRawDescriptionToStructured(raw) {
     } else if (block.type === 'key-value') {
       const prefix = block.icon ? `${block.icon} ` : '• ';
       lines.push(`${prefix}${block.key} : ${block.value}`);
+    } else if (block.type === 'subheading') {
+      lines.push('');
+      lines.push(`• ${block.content} :`);
     } else if (block.type === 'bullet') {
-      lines.push(`• ${block.content}`);
+      const prefix = block.icon ? `${block.icon} ` : '• ';
+      lines.push(`${prefix}${block.content}`);
     } else if (block.type === 'callout') {
       lines.push(`${block.icon} ${block.content}`);
     } else {

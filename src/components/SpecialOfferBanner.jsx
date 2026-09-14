@@ -80,7 +80,7 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-slate-900 to-brand-navy text-white py-10 md:py-14 px-4 sm:px-6 lg:px-8 border-b-4 border-brand-orange shadow-2xl">
+    <section className="dark relative overflow-hidden bg-gradient-to-br from-brand-navy via-slate-900 to-brand-navy text-white py-10 md:py-14 px-4 sm:px-6 lg:px-8 border-b-4 border-brand-orange shadow-2xl">
       {/* Background Animated Glow Effects */}
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-orange/25 rounded-full blur-3xl pointer-events-none animate-pulse" />
       <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -114,6 +114,7 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
             <ProductDescription 
               description={descText} 
               lang={lang} 
+              theme="dark"
               showPhoneCTA={false} 
               showTrustCards={false} 
             />

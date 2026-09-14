@@ -1741,11 +1741,11 @@ export default function AdminModal({
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-normal leading-relaxed"
                 />
                 {showSoDescPreviewFr && soDescription.trim() && (
-                  <div className="mt-2.5 p-3.5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-brand-orange/40 shadow-xs">
+                  <div className="mt-2.5 p-3.5 bg-brand-navy rounded-2xl border border-brand-orange/40 shadow-xs">
                     <span className="text-[11px] font-extrabold text-brand-orange block mb-2">
-                      👁️ Rendu réel pour les clients :
+                      👁️ Rendu réel sur la bannière sombre du site :
                     </span>
-                    <ProductDescription description={soDescription} lang="fr" />
+                    <ProductDescription description={soDescription} lang="fr" theme="dark" />
                   </div>
                 )}
               </div>
