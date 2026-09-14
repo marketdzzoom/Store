@@ -23,7 +23,9 @@ import {
   RefreshCw,
   Sliders,
   Pencil,
-  Palette
+  Palette,
+  Search,
+  Star
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -114,6 +116,19 @@ export default function AdminModal({
   const [soDescriptionAr, setSoDescriptionAr] = useState(specialOffer ? specialOffer.descriptionAr : '');
   const [soImageFiles, setSoImageFiles] = useState(specialOffer ? (specialOffer.images || []) : []);
   const [soUrlsText, setSoUrlsText] = useState('');
+  const [selectedSoProductId, setSelectedSoProductId] = useState(specialOffer?.productId || '');
+  const [soSearchTerm, setSoSearchTerm] = useState('');
+
+  // Filtered products list for special offer picker
+  const filteredSoProducts = products.filter((p) => {
+    if (!soSearchTerm.trim()) return true;
+    const term = soSearchTerm.toLowerCase();
+    return (
+      (p.title || '').toLowerCase().includes(term) ||
+      (p.titleAr || '').toLowerCase().includes(term) ||
+      (p.category || '').toLowerCase().includes(term)
+    );
+  });
 
   const [formSuccess, setFormSuccess] = useState(false);
   const [soSuccess, setSoSuccess] = useState(false);
@@ -253,18 +268,49 @@ export default function AdminModal({
     setSoImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSelectProductForSpecialOffer = (prodId) => {
+  const handleSelectProductForSpecialOffer = (prodId, autoPublish = false) => {
     const p = products.find((item) => item.id === prodId);
     if (p) {
+      setSelectedSoProductId(p.id);
       setSoTitle(p.title);
       setSoTitleAr(p.titleAr || '');
       setSoPrice(p.price);
-      setSoOldPrice(p.oldPrice || p.price * 1.25);
-      setSoCategory(p.category);
-      setSoDescription(p.description);
+      setSoOldPrice(p.oldPrice || Math.round(p.price * 1.25));
+      setSoCategory(p.category || 'High-Tech');
+      setSoDescription(p.description || '');
       setSoDescriptionAr(p.descriptionAr || '');
-      setSoImageFiles(p.images && p.images.length > 0 ? p.images : [p.image]);
+      const pImages = p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
+      setSoImageFiles(pImages);
+      setSoUrlsText('');
+      setSoEnabled(true);
+
+      if (autoPublish) {
+        const updatedOffer = {
+          enabled: true,
+          tagline: soTagline.trim() || 'Vente Flash 24H ⚡',
+          seasonBadge: soSeasonBadge.trim() || 'Arrivage Spécial Saison ☀️',
+          title: p.title,
+          titleAr: p.titleAr || p.title,
+          price: parseFloat(p.price),
+          oldPrice: p.oldPrice ? parseFloat(p.oldPrice) : Math.round(p.price * 1.25),
+          category: p.category || 'High-Tech',
+          description: p.description || '',
+          descriptionAr: p.descriptionAr || p.description || '',
+          images: pImages,
+          productId: p.id,
+          countdownHours: 24
+        };
+        onUpdateSpecialOffer(updatedOffer);
+        saveSpecialOffer(updatedOffer);
+        setSoSuccess(true);
+        setTimeout(() => setSoSuccess(false), 2500);
+      }
     }
+  };
+
+  const handleSetProductAsSpecialOfferFromManage = (prod) => {
+    handleSelectProductForSpecialOffer(prod.id, false);
+    setActiveTab('special_offer');
   };
 
   const handleStartEditProduct = (prod) => {
@@ -434,6 +480,7 @@ export default function AdminModal({
       description: soDescription.trim(),
       descriptionAr: soDescriptionAr.trim() || soDescription.trim(),
       images: finalImages,
+      productId: selectedSoProductId || specialOffer?.productId || null,
       countdownHours: 24
     };
 
@@ -1253,21 +1300,156 @@ export default function AdminModal({
                 </label>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Remplissage rapide : Choisir un produit existant dans le magasin
-                </label>
-                <select
-                  onChange={(e) => handleSelectProductForSpecialOffer(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
-                >
-                  <option value="">-- Sélectionner un produit pour l'Offre Spéciale --</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} ({formatPrice(p.price)})
-                    </option>
-                  ))}
-                </select>
+              {/* SÉLECTEUR VISUEL RAPIDE DE PRODUIT DU MAGASIN (1-CLIC) */}
+              <div className="p-3.5 sm:p-4 bg-gradient-to-br from-brand-orange/5 via-slate-50 to-slate-100 dark:from-brand-orange/10 dark:via-slate-850 dark:to-slate-900 rounded-2xl border-2 border-brand-orange/30 space-y-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 bg-brand-orange text-white rounded-lg shadow-xs">
+                      <Zap className="w-4 h-4 fill-current" />
+                    </span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                        Choisir un article déjà publié (Sélection Rapide ⚡)
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Cliquez sur un produit pour pré-remplir l'Offre Spéciale instantanément.
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedSoProductId && (
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 self-start sm:self-auto flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-500" />
+                      <span>Article lié</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Recherche d'article */}
+                {products.length > 3 && (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={soSearchTerm}
+                      onChange={(e) => setSoSearchTerm(e.target.value)}
+                      placeholder="Filtrer les articles par nom ou catégorie..."
+                      className="w-full pl-8 pr-7 py-2 bg-white dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none placeholder:text-slate-400"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    {soSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSoSearchTerm('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Grille / Liste visuelle défilante des produits */}
+                {products.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-500 bg-white dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-800">
+                    Aucun produit dans le catalogue. Ajoutez d'abord un article dans l'onglet "Nouveau Produit".
+                  </div>
+                ) : (
+                  <div className="max-h-52 overflow-y-auto pr-1 divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-750 shadow-inner">
+                    {filteredSoProducts.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-500">
+                        Aucun article ne correspond à "{soSearchTerm}".
+                      </div>
+                    ) : (
+                      filteredSoProducts.map((p) => {
+                        const isSelected = selectedSoProductId === p.id || soTitle === p.title;
+                        const primaryImg = p.images && p.images.length > 0 ? p.images[0] : p.image;
+                        return (
+                          <div
+                            key={p.id}
+                            className={`p-2.5 flex items-center justify-between gap-3 transition-colors ${
+                              isSelected
+                                ? 'bg-brand-orange/10 dark:bg-brand-orange/15'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={primaryImg}
+                                alt={p.title}
+                                className="w-10 h-10 object-cover rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                              />
+                              <div className="min-w-0 text-left">
+                                <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                  {p.title}
+                                </h5>
+                                <div className="flex items-center gap-2 text-[10px]">
+                                  <span className="font-black text-brand-orange">
+                                    {formatPrice(p.price)}
+                                  </span>
+                                  <span className="text-slate-400">
+                                    • {p.category}
+                                  </span>
+                                  {p.badge && (
+                                    <span className="text-slate-500 font-semibold">
+                                      ({p.badge})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleSelectProductForSpecialOffer(p.id, false)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1 border ${
+                                  isSelected
+                                    ? 'bg-brand-orange text-white border-brand-orange shadow-xs scale-105'
+                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60'
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Sélectionné</span>
+                                  </>
+                                ) : (
+                                  <span>Choisir</span>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSelectProductForSpecialOffer(p.id, true)}
+                                className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1"
+                                title="Publier immédiatement cette offre spéciale sur le site"
+                              >
+                                <Zap className="w-3 h-3 fill-current" />
+                                <span className="hidden sm:inline">Publier Direct</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+
+                {/* Dropdown classique en appoint */}
+                <div className="pt-1">
+                  <select
+                    value={selectedSoProductId}
+                    onChange={(e) => handleSelectProductForSpecialOffer(e.target.value)}
+                    className="w-full p-2 bg-white dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-brand-orange focus:outline-none"
+                  >
+                    <option value="">-- Ou choisir via la liste déroulante --</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title} — ({formatPrice(p.price)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1598,6 +1780,11 @@ export default function AdminModal({
                       const isHidden = p.isVisible === false;
                       const isOut = p.inStock === false || p.stockQuantity === 0 || p.badge === 'Rupture de Stock' || p.badge === 'نفذت الكمية';
                       const imgCount = p.images ? p.images.length : (p.image ? 1 : 0);
+                      const isCurrentSpecialOffer = (specialOffer?.enabled !== false) && (
+                        (selectedSoProductId && selectedSoProductId === p.id) ||
+                        (specialOffer?.productId && specialOffer?.productId === p.id) ||
+                        (specialOffer?.title && specialOffer?.title === p.title)
+                      );
 
                       return (
                         <div 
@@ -1605,6 +1792,8 @@ export default function AdminModal({
                           className={`p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all border ${
                             isHidden 
                               ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50' 
+                              : isCurrentSpecialOffer
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60 shadow-xs'
                               : 'bg-slate-50/70 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                         >
@@ -1644,6 +1833,13 @@ export default function AdminModal({
                                 <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700/60 px-1.5 py-0.5 rounded font-semibold">
                                   {p.category}
                                 </span>
+
+                                {isCurrentSpecialOffer && (
+                                  <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-xs whitespace-nowrap">
+                                    <Zap className="w-2.5 h-2.5 fill-white" />
+                                    ⭐ Offre Spéciale
+                                  </span>
+                                )}
 
                                 {isHidden ? (
                                   <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-amber-200 dark:border-amber-900 whitespace-nowrap">
@@ -1713,6 +1909,21 @@ export default function AdminModal({
                             >
                               <Pencil className="w-3.5 h-3.5 text-sky-600" />
                               <span>Modifier</span>
+                            </button>
+
+                            {/* Set as Special Offer Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleSetProductAsSpecialOfferFromManage(p)}
+                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 border ${
+                                isCurrentSpecialOffer
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-amber-950/30'
+                              }`}
+                              title={isCurrentSpecialOffer ? "Cet article est actuellement l'Offre Spéciale. Cliquer pour gérer" : "Définir comme l'Offre Spéciale du jour"}
+                            >
+                              <Zap className={`w-3.5 h-3.5 ${isCurrentSpecialOffer ? 'text-amber-600 fill-amber-500' : 'text-amber-500'}`} />
+                              <span>{isCurrentSpecialOffer ? '⭐ En Offre' : 'Offre Spéciale'}</span>
                             </button>
 
                             {/* Visibility Toggle Button */}
