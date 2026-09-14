@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingBag, Plus, Eye, Star, Check, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
+import { getColorStyle } from '../utils/colors';
 
 export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickView, lang = 'fr' }) {
   const [added, setAdded] = useState(false);
@@ -141,6 +142,35 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
             {descText}
           </p>
+
+          {/* Real Colors Available Swatches Preview */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-2.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+              <span className="text-[10px] text-slate-400 font-bold">
+                {t.color || 'Couleur'} :
+              </span>
+              <div className="flex items-center gap-1">
+                {product.colors.slice(0, 5).map((col) => {
+                  const cStyle = getColorStyle(col);
+                  return (
+                    <span
+                      key={col}
+                      className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 ${
+                        cStyle.isLight ? 'border border-slate-300 dark:border-slate-500' : ''
+                      }`}
+                      style={{ background: cStyle.background }}
+                      title={col}
+                    />
+                  );
+                })}
+                {product.colors.length > 5 && (
+                  <span className="text-[9px] text-slate-400 font-bold">
+                    +{product.colors.length - 5}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -224,6 +224,12 @@ export default function App() {
     saveProducts(updated);
   };
 
+  const handleUpdateProduct = (updatedProduct) => {
+    const updated = products.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
+    setProducts(updated);
+    saveProducts(updated);
+  };
+
   const handleDeleteProduct = (productId) => {
     const updated = products.filter((p) => p.id !== productId);
     setProducts(updated);
@@ -449,6 +455,7 @@ export default function App() {
           onClose={() => setIsAdminOpen(false)}
           products={products}
           onAddProduct={handleAddProduct}
+          onUpdateProduct={handleUpdateProduct}
           onDeleteProduct={handleDeleteProduct}
           onToggleProductVisibility={handleToggleProductVisibility}
           onToggleProductStock={handleToggleProductStock}

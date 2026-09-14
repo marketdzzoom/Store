@@ -35,6 +35,7 @@ import {
   checkOrderRateLimit, 
   recordOrderTimestamp 
 } from '../utils/sanitizer';
+import { getColorStyle } from '../utils/colors';
 
 export default function CartDrawer({
   isOpen,
@@ -402,11 +403,18 @@ export default function CartDrawer({
                                       {item.selectedSize}
                                     </span>
                                   )}
-                                  {item.selectedColor && (
-                                    <span className="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded">
-                                      {item.selectedColor}
-                                    </span>
-                                  )}
+                                  {item.selectedColor && (() => {
+                                    const cStyle = getColorStyle(item.selectedColor);
+                                    return (
+                                      <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 inline-flex items-center gap-1">
+                                        <span
+                                          className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                          style={{ background: cStyle.background }}
+                                        />
+                                        <span>{item.selectedColor}</span>
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
@@ -471,12 +479,19 @@ export default function CartDrawer({
                                 <span>🎨</span>
                                 <span>{t.color || 'Couleur'} :</span>
                               </span>
-                              {item.selectedColor ? (
-                                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                                  <CheckCircle2 className="w-2.5 h-2.5" />
-                                  <span>{item.selectedColor}</span>
-                                </span>
-                              ) : (
+                              {item.selectedColor ? (() => {
+                                const cStyle = getColorStyle(item.selectedColor);
+                                return (
+                                  <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5" />
+                                    <span
+                                      className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                      style={{ background: cStyle.background }}
+                                    />
+                                    <span>{item.selectedColor}</span>
+                                  </span>
+                                );
+                              })() : (
                                 <span className="text-[10px] font-bold text-brand-orange bg-brand-orange/10 px-1.5 py-0.5 rounded">
                                   {lang === 'ar' ? 'حدد اللون' : 'Choisissez'}
                                 </span>
@@ -485,6 +500,7 @@ export default function CartDrawer({
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {availableColors.map((col) => {
                                 const isSel = item.selectedColor === col;
+                                const cStyle = getColorStyle(col);
                                 return (
                                   <button
                                     key={col}
@@ -492,11 +508,16 @@ export default function CartDrawer({
                                     onClick={() => onUpdateItemVariant && onUpdateItemVariant(itemKey, { selectedColor: col })}
                                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${
                                       isSel
-                                        ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-xs scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
+                                        ? 'bg-slate-900 dark:bg-brand-orange text-white border-slate-900 dark:border-brand-orange shadow-xs scale-105 ring-2 ring-brand-orange/40'
                                         : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60'
                                     }`}
                                   >
-                                    <span className={`w-2 h-2 rounded-full inline-block ${isSel ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                                    <span
+                                      className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 transition-transform ${
+                                        isSel ? 'scale-110 ring-1 ring-white/80' : ''
+                                      } ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                      style={{ background: cStyle.background }}
+                                    />
                                     <span>{col}</span>
                                   </button>
                                 );

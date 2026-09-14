@@ -21,7 +21,9 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Sliders
+  Sliders,
+  Pencil,
+  Palette
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -32,6 +34,7 @@ import {
   updateOrderStatus, 
   deleteOrderFromStorage 
 } from '../utils/storage';
+import { PRESET_COLORS, getColorStyle } from '../utils/colors';
 
 const MONTHS_LIST = [
   { value: 'Tous', label: 'Tous les mois' },
@@ -56,6 +59,7 @@ export default function AdminModal({
   onClose,
   products,
   onAddProduct,
+  onUpdateProduct,
   onDeleteProduct,
   onToggleProductVisibility,
   onToggleProductStock,
@@ -65,6 +69,7 @@ export default function AdminModal({
   onUpdateSpecialOffer
 }) {
   const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'add', 'special_offer', 'manage'
+  const [editingProduct, setEditingProduct] = useState(null);
   const [prodFilter, setProdFilter] = useState('all'); // 'all', 'visible', 'hidden', 'outofstock'
   
   // Orders Management State
@@ -262,6 +267,59 @@ export default function AdminModal({
     }
   };
 
+  const handleStartEditProduct = (prod) => {
+    setEditingProduct(prod);
+    setTitle(prod.title || '');
+    setTitleAr(prod.titleAr || '');
+    setPrice(prod.price !== undefined && prod.price !== null ? String(prod.price) : '');
+    setOldPrice(prod.oldPrice ? String(prod.oldPrice) : '');
+    setCategory(prod.category || CATEGORIES[1]);
+    setBadge(prod.badge || 'Nouveau');
+    setDescription(prod.description || '');
+    setDescriptionAr(prod.descriptionAr || '');
+    setInStock(prod.inStock !== false);
+    setStockQuantity(String(prod.stockQuantity ?? 10));
+    setIsVisible(prod.isVisible !== false);
+    setSizesInput(prod.sizes && prod.sizes.length > 0 ? prod.sizes.join(', ') : '');
+    setColorsInput(prod.colors && prod.colors.length > 0 ? prod.colors.join(', ') : '');
+    setImageFilesPreviews(prod.images && prod.images.length > 0 ? prod.images : (prod.image ? [prod.image] : []));
+    setImageUrlsText('');
+    setActiveTab('add');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setTitle('');
+    setTitleAr('');
+    setPrice('');
+    setOldPrice('');
+    setDescription('');
+    setDescriptionAr('');
+    setSizesInput('');
+    setColorsInput('');
+    setImageUrlsText('');
+    setImageFilesPreviews([]);
+    setStockQuantity('10');
+    setInStock(true);
+    setIsVisible(true);
+    setBadge('Nouveau');
+  };
+
+  const handleTogglePresetColor = (colorName) => {
+    const current = colorsInput
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    const lowerList = current.map((c) => c.toLowerCase());
+    const targetLower = colorName.toLowerCase();
+
+    if (lowerList.includes(targetLower)) {
+      setColorsInput(current.filter((c) => c.toLowerCase() !== targetLower).join(', '));
+    } else {
+      setColorsInput([...current, colorName].join(', '));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !price || !description.trim()) {
@@ -287,6 +345,37 @@ export default function AdminModal({
       .split(',')
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
+
+    if (editingProduct) {
+      const updatedProd = {
+        ...editingProduct,
+        title: title.trim(),
+        titleAr: titleAr.trim() || title.trim(),
+        price: parseFloat(price),
+        oldPrice: oldPrice ? parseFloat(oldPrice) : null,
+        category,
+        badge: inStock ? badge.trim() : 'Rupture de Stock',
+        description: description.trim(),
+        descriptionAr: descriptionAr.trim() || description.trim(),
+        image: finalImageList[0],
+        images: finalImageList,
+        sizes: parsedSizes,
+        colors: parsedColors,
+        inStock: inStock,
+        stockQuantity: inStock ? parseInt(stockQuantity || 10) : 0,
+        isVisible: isVisible,
+        updatedAt: new Date().toISOString()
+      };
+
+      onUpdateProduct && onUpdateProduct(updatedProd);
+      setFormSuccess(true);
+      setTimeout(() => {
+        setFormSuccess(false);
+        handleCancelEdit();
+        setActiveTab('manage');
+      }, 1500);
+      return;
+    }
 
     const newProd = {
       id: `prod-${Date.now()}`,
@@ -314,20 +403,7 @@ export default function AdminModal({
     setFormSuccess(true);
     setTimeout(() => setFormSuccess(false), 2500);
 
-    setTitle('');
-    setTitleAr('');
-    setPrice('');
-    setOldPrice('');
-    setDescription('');
-    setDescriptionAr('');
-    setSizesInput('');
-    setColorsInput('');
-    setImageUrlsText('');
-    setImageFilesPreviews([]);
-    setStockQuantity('10');
-    setInStock(true);
-    setIsVisible(true);
-    setBadge('Nouveau');
+    handleCancelEdit();
   };
 
   const handleSaveSpecialOfferForm = (e) => {
@@ -426,8 +502,17 @@ export default function AdminModal({
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <PlusCircle className="w-4 h-4" />
-            Nouveau Produit
+            {editingProduct ? (
+              <>
+                <Pencil className="w-4 h-4 text-sky-500" />
+                <span>Modifier Produit ✏️</span>
+              </>
+            ) : (
+              <>
+                <PlusCircle className="w-4 h-4" />
+                <span>Nouveau Produit</span>
+              </>
+            )}
           </button>
 
           <button
@@ -675,11 +760,18 @@ export default function AdminModal({
                                           Pointure/Taille: {it.selectedSize}
                                         </span>
                                       )}
-                                      {it.selectedColor && (
-                                        <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded">
-                                          Couleur: {it.selectedColor}
-                                        </span>
-                                      )}
+                                      {it.selectedColor && (() => {
+                                        const cStyle = getColorStyle(it.selectedColor);
+                                        return (
+                                          <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1.5 shadow-2xs">
+                                            <span 
+                                              className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                              style={{ background: cStyle.background }}
+                                            />
+                                            <span>Couleur: {it.selectedColor}</span>
+                                          </span>
+                                        );
+                                      })()}
                                     </div>
                                   )}
                                 </div>
@@ -712,13 +804,31 @@ export default function AdminModal({
             </div>
           )}
 
-          {/* TAB 2: Add New Product */}
+          {/* TAB 2: Add or Edit Product */}
           {activeTab === 'add' && (
             <form onSubmit={handleSubmit} className="space-y-4">
               {formSuccess && (
                 <div className="p-3 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2 animate-fadeIn">
                   <Check className="w-4 h-4 text-emerald-600" />
-                  Produit créé et publié en direct dans la boutique !
+                  {editingProduct ? 'Modifications enregistrées avec succès !' : 'Produit créé et publié en direct dans la boutique !'}
+                </div>
+              )}
+
+              {editingProduct && (
+                <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl flex items-center justify-between gap-3 text-xs text-sky-900 dark:text-sky-200 animate-fadeIn">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Pencil className="w-4 h-4 text-sky-600 flex-shrink-0" />
+                    <span className="truncate">
+                      Modification de l'article : <strong className="font-extrabold">{editingProduct.title}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-2.5 py-1 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-red-500 rounded-lg font-bold flex-shrink-0 active:scale-95 transition-colors shadow-2xs"
+                  >
+                    Annuler
+                  </button>
                 </div>
               )}
 
@@ -888,10 +998,77 @@ export default function AdminModal({
                       value={colorsInput}
                       onChange={(e) => setColorsInput(e.target.value)}
                       placeholder="Ex: Noir, Blanc, Bleu Marine, Gris, Rouge"
-                      className="w-full p-2.5 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none placeholder:text-slate-400"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none placeholder:text-slate-400 font-medium"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Le client pourra choisir sa couleur préférée (transmise au livreur).
+
+                    {/* Aperçu en direct des vraies couleurs saisies */}
+                    {colorsInput.trim() && (
+                      <div className="flex items-center gap-1.5 flex-wrap mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mr-1">
+                          Aperçu réel :
+                        </span>
+                        {colorsInput
+                          .split(',')
+                          .map((c) => c.trim())
+                          .filter(Boolean)
+                          .map((colName) => {
+                            const cStyle = getColorStyle(colName);
+                            return (
+                              <span
+                                key={colName}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[11px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs"
+                              >
+                                <span
+                                  className={`w-3 h-3 rounded-full inline-block flex-shrink-0 ${
+                                    cStyle.isLight ? 'border border-slate-400' : ''
+                                  }`}
+                                  style={{ background: cStyle.background }}
+                                />
+                                <span>{colName}</span>
+                              </span>
+                            );
+                          })}
+                      </div>
+                    )}
+
+                    {/* Palette rapide de sélection en 1 clic */}
+                    <div className="mt-2 pt-2 border-t border-slate-200/70 dark:border-slate-750">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 flex items-center gap-1">
+                        <Palette className="w-3 h-3 text-brand-orange" />
+                        <span>Sélection rapide en 1 clic (cliquez pour ajouter / retirer) :</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto pr-1">
+                        {PRESET_COLORS.map((preset) => {
+                          const currentTokens = colorsInput
+                            .split(',')
+                            .map((c) => c.trim().toLowerCase());
+                          const isIncluded = currentTokens.includes(preset.name.toLowerCase());
+                          return (
+                            <button
+                              key={preset.name}
+                              type="button"
+                              onClick={() => handleTogglePresetColor(preset.name)}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all active:scale-95 border flex items-center gap-1 ${
+                                isIncluded
+                                  ? 'bg-slate-900 text-white dark:bg-brand-orange border-slate-900 dark:border-brand-orange shadow-xs ring-1 ring-brand-orange'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60'
+                              }`}
+                            >
+                              <span
+                                className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 ${
+                                  preset.isLight ? 'border border-slate-400' : ''
+                                }`}
+                                style={{ background: preset.gradient || preset.hex }}
+                              />
+                              <span>{preset.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-slate-400 mt-1.5">
+                      Les pastilles de couleurs réelles seront fidèlement affichées aux clients sur la fiche produit et dans la commande express.
                     </p>
                   </div>
                 </div>
@@ -1013,13 +1190,36 @@ export default function AdminModal({
                 </label>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Globe className="w-4 h-4" />
-                <span>{isVisible ? 'Publier le produit dans la boutique' : 'Enregistrer le produit (Masqué)'}</span>
-              </button>
+              <div className="flex items-center gap-3 pt-2">
+                {editingProduct && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="w-1/3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 py-3.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                    <span>Annuler</span>
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={`${
+                    editingProduct ? 'w-2/3' : 'w-full'
+                  } bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 rounded-xl font-extrabold text-xs sm:text-sm shadow-lg hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2`}
+                >
+                  {editingProduct ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Enregistrer les modifications</span>
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-4 h-4" />
+                      <span>{isVisible ? 'Publier le produit dans la boutique' : 'Enregistrer le produit (Masqué)'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           )}
 
@@ -1480,8 +1680,22 @@ export default function AdminModal({
                                 )}
 
                                 {p.colors && p.colors.length > 0 && (
-                                  <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-900 whitespace-nowrap">
-                                    🎨 {p.colors.length} couleur{p.colors.length > 1 ? 's' : ''}
+                                  <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-900 inline-flex items-center gap-1.5 whitespace-nowrap">
+                                    <span>🎨</span>
+                                    <span className="inline-flex items-center gap-0.5">
+                                      {p.colors.slice(0, 4).map((c) => {
+                                        const cStyle = getColorStyle(c);
+                                        return (
+                                          <span
+                                            key={c}
+                                            className={`w-2 h-2 rounded-full inline-block ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                            style={{ background: cStyle.background }}
+                                            title={c}
+                                          />
+                                        );
+                                      })}
+                                    </span>
+                                    <span>{p.colors.length} couleur{p.colors.length > 1 ? 's' : ''}</span>
                                   </span>
                                 )}
                               </div>
@@ -1490,6 +1704,17 @@ export default function AdminModal({
 
                           {/* Actions: Full-width toolbar on smartphone, inline on desktop */}
                           <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto">
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditProduct(p)}
+                              className="flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 bg-white hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-sky-950/40 dark:hover:text-sky-300"
+                              title="Modifier toutes les informations de l'article"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-sky-600" />
+                              <span>Modifier</span>
+                            </button>
+
                             {/* Visibility Toggle Button */}
                             <button
                               type="button"

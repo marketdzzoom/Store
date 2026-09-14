@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
+import { getColorStyle } from '../utils/colors';
 
 export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, lang = 'fr' }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -361,15 +362,25 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                           <span>🎨</span>
                           <span>{t.selectColor || 'Couleur :'}</span>
                         </span>
-                        {selectedColor && (
-                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/20">
-                            {selectedColor}
-                          </span>
-                        )}
+                        {selectedColor && (() => {
+                          const selStyle = getColorStyle(selectedColor);
+                          return (
+                            <span className="text-xs font-black text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 inline-flex items-center gap-1.5 shadow-2xs">
+                              <span
+                                className={`w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 ${
+                                  selStyle.isLight ? 'border border-slate-400' : ''
+                                }`}
+                                style={{ background: selStyle.background }}
+                              />
+                              <span>{selectedColor}</span>
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         {product.colors.map((col) => {
                           const isSelected = selectedColor === col;
+                          const cStyle = getColorStyle(col);
                           return (
                             <button
                               key={col}
@@ -378,13 +389,18 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                                 setSelectedColor(col);
                                 setVariantError('');
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-1.5 ${
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-95 flex items-center gap-2 ${
                                 isSelected
-                                  ? 'bg-brand-navy dark:bg-brand-orange text-white border-brand-navy dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-navy/30 dark:ring-brand-orange/30'
+                                  ? 'bg-slate-900 dark:bg-brand-orange text-white border-slate-900 dark:border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/40'
                                   : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
                               }`}
                             >
-                              <span className={`w-2.5 h-2.5 rounded-full inline-block ${isSelected ? 'bg-brand-orange dark:bg-white' : 'bg-slate-400'}`} />
+                              <span
+                                className={`w-3.5 h-3.5 rounded-full inline-block flex-shrink-0 transition-transform ${
+                                  isSelected ? 'scale-110 ring-1 ring-white/80' : ''
+                                } ${cStyle.isLight ? 'border border-slate-350 dark:border-slate-500' : ''}`}
+                                style={{ background: cStyle.background }}
+                              />
                               <span>{col}</span>
                             </button>
                           );
