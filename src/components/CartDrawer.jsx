@@ -54,7 +54,6 @@ export default function CartDrawer({
   const [selectedWilayaCode, setSelectedWilayaCode] = useState('16'); // Default 16 - Alger
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [phoneBackup, setPhoneBackup] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -86,7 +85,6 @@ export default function CartDrawer({
     const errs = {};
     const cleanName = sanitizeText(fullName, 100).trim();
     const cleanPhone = sanitizePhone(phone);
-    const cleanPhoneBackup = sanitizePhone(phoneBackup);
     const cleanAddress = sanitizeText(address, 250).trim();
 
     // 1. Nom & Prénom: Minimum 3 characters, must contain actual letters
@@ -101,16 +99,7 @@ export default function CartDrawer({
       errs.phone = t.errPhone || (lang === 'ar' ? 'رقم هاتف جزائري غير صحيح أو تجريبي (05/06/07 + 8 أرقام)' : 'Numéro algérien invalide ou fictif (05, 06 ou 07 + 8 chiffres réels).');
     }
 
-    // 3. Téléphone secondaire (Optionnel): Valid DZ number and different from primary
-    if (cleanPhoneBackup) {
-      if (!validateDZPhone(cleanPhoneBackup)) {
-        errs.phoneBackup = t.errPhoneBackup || (lang === 'ar' ? 'رقم الهاتف الثانوي غير صحيح (05/06/07 + 8 أرقام)' : 'Numéro secondaire invalide (05, 06 ou 07 + 8 chiffres réels).');
-      } else if (normalizeDZPhone(cleanPhoneBackup) === normalizeDZPhone(cleanPhone)) {
-        errs.phoneBackup = t.errPhoneBackupSame || (lang === 'ar' ? 'يجب أن يكون الرقم الثاني مختلفاً عن الرقم الأول' : 'Le numéro secondaire doit être différent du numéro principal.');
-      }
-    }
-
-    // 4. Wilaya: Mandatory
+    // 3. Wilaya: Mandatory
     if (!selectedWilayaCode) {
       errs.wilaya = t.errWilaya || (lang === 'ar' ? 'يرجى اختيار الولاية' : 'Veuillez sélectionner une wilaya.');
     }
@@ -156,7 +145,7 @@ export default function CartDrawer({
     const sanitizedCustomer = {
       fullName: sanitizeText(fullName, 100).trim(),
       phone: formatDZPhoneDisplay(phone),
-      phoneBackup: phoneBackup ? formatDZPhoneDisplay(phoneBackup) : '',
+      phoneBackup: '',
       wilaya: currentWilaya.name,
       address: sanitizeText(address, 250).trim(),
       notes: sanitizeText(notes, 250).trim()
@@ -186,7 +175,6 @@ export default function CartDrawer({
       
       setFullName('');
       setPhone('');
-      setPhoneBackup('');
       setAddress('');
       setNotes('');
       setErrors({});
@@ -204,7 +192,7 @@ export default function CartDrawer({
     const sanitizedCustomer = {
       fullName: sanitizeText(fullName, 100).trim(),
       phone: formatDZPhoneDisplay(phone),
-      phoneBackup: phoneBackup ? formatDZPhoneDisplay(phoneBackup) : '',
+      phoneBackup: '',
       wilaya: currentWilaya.name,
       address: sanitizeText(address, 250).trim(),
       notes: sanitizeText(notes, 250).trim()
@@ -229,8 +217,6 @@ export default function CartDrawer({
   // Real-time Algerian carrier detection & phone validity
   const phoneCarrier = getDZPhoneCarrier(phone);
   const isPhoneValid = validateDZPhone(phone);
-  const backupCarrier = phoneBackup ? getDZPhoneCarrier(phoneBackup) : null;
-  const isBackupValid = phoneBackup ? validateDZPhone(phoneBackup) : false;
 
   if (!isOpen) return null;
 
@@ -648,53 +634,6 @@ export default function CartDrawer({
                     {errors.phone && (
                       <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
                         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phone}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Téléphone Secondaire (Optionnel) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        {t.phoneSecondary}
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        {backupCarrier && (
-                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${backupCarrier.bg} ${backupCarrier.color}`}>
-                            {backupCarrier.name}
-                          </span>
-                        )}
-                        {isBackupValid && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            <span>{t.phoneConforme}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        maxLength={18}
-                        value={phoneBackup}
-                        onChange={(e) => {
-                          setPhoneBackup(e.target.value);
-                          if (errors.phoneBackup) setErrors((prev) => ({ ...prev, phoneBackup: undefined }));
-                        }}
-                        placeholder={t.phoneSecondaryPlaceholder}
-                        className={`w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs sm:text-sm border ${
-                          errors.phoneBackup 
-                            ? 'border-red-500 ring-1 ring-red-500/20' 
-                            : isBackupValid 
-                            ? 'border-emerald-500' 
-                            : 'border-slate-200 dark:border-slate-700'
-                        } text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none`}
-                      />
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    </div>
-                    {errors.phoneBackup && (
-                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 font-semibold">
-                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.phoneBackup}
                       </p>
                     )}
                   </div>
