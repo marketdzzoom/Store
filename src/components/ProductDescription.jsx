@@ -3,8 +3,7 @@ import {
   Sparkles, 
   CheckCircle2, 
   ChevronDown, 
-  ChevronUp,
-  PhoneCall
+  ChevronUp 
 } from 'lucide-react';
 import { parseSmartDescription } from '../utils/descriptionParser';
 
@@ -154,7 +153,7 @@ export default function ProductDescription({
 }
 
 /**
- * Automatically detects phone numbers in any text and renders them as clickable links
+ * Automatically highlights phone numbers in any text cleanly as bold text
  */
 function renderFormattedTextWithLinks(text) {
   if (!text || typeof text !== 'string') return text;
@@ -173,23 +172,18 @@ function renderFormattedTextWithLinks(text) {
   matches.forEach((match, idx) => {
     const start = match.index;
     const phoneStr = match[0];
-    const cleanTel = phoneStr.replace(/[\s.-]/g, '');
 
     if (start > lastIndex) {
       parts.push(text.substring(lastIndex, start));
     }
 
     parts.push(
-      <a
-        key={`tel-${idx}`}
-        href={`tel:${cleanTel}`}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange font-bold text-xs transition-colors"
-        title="Cliquer pour appeler"
-        onClick={(e) => e.stopPropagation()}
+      <strong 
+        key={`phone-${idx}`} 
+        className="font-extrabold text-slate-900 dark:text-white tracking-wider"
       >
-        <PhoneCall className="w-2.5 h-2.5" />
-        <span>{phoneStr}</span>
-      </a>
+        {phoneStr}
+      </strong>
     );
 
     lastIndex = start + phoneStr.length;
