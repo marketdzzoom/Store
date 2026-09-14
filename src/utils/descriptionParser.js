@@ -1,198 +1,170 @@
 /**
- * Description Parser & Structurer for Zoom Market Dz
- * Converts condensed or raw product descriptions into structured,
- * high-impact, organized e-commerce sections (Headlines, Intro, Features, Trust cards, Phone).
+ * Universal Smart Description Parser for Zoom Market Dz
+ * Completely dynamic: NO hardcoded domain keywords.
+ * Works for ANY product category (Tech, Fashion, Beauty, Home, Auto, Food, etc.)
+ * in French, Arabic, and English.
  */
 
-export function parseProductDescription(raw) {
-  if (!raw || typeof raw !== 'string') return null;
+/**
+ * Parses any description into an array of semantic blocks:
+ * - 'banner': Highlight hook or product slogan (✨ ... ✨)
+ * - 'key-value': Any dynamic specification line (Label : Value)
+ * - 'bullet': Any bullet list item (•, -, *, ✓, 1., etc.)
+ * - 'callout': Lines starting with an emoji icon
+ * - 'paragraph': Normal prose description
+ */
+export function parseSmartDescription(raw) {
+  if (!raw || typeof raw !== 'string') return [];
   const text = raw.trim();
-  if (!text) return null;
+  if (!text) return [];
 
-  let normalized = text;
-
-  // 1. Headline enclosed in ✨ or ⭐ or 🔥
-  let headline = null;
-  const headlineMatch = normalized.match(/^([✨⭐🔥]+)(.*?)\1/u);
-  if (headlineMatch) {
-    headline = headlineMatch[2].replace(/[✨⭐🔥]/g, '').trim();
-    normalized = normalized.substring(headlineMatch[0].length).trim();
+  // Step 1: Normalize lines
+  let rawLines = [];
+  if (text.includes('\n')) {
+    rawLines = text.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean);
   } else {
-    // If first line starts with ✨ or ⭐ and is short (< 90 chars)
-    const firstLineMatch = normalized.match(/^([✨⭐🔥]+)\s*([^.\n]+)[.!\n]?/u);
-    if (firstLineMatch && firstLineMatch[2].length < 90) {
-      headline = firstLineMatch[2].trim();
-      normalized = normalized.substring(firstLineMatch[0].length).trim();
+    // Single run-on string without newlines: break into lines smartly using generic grammar
+    let norm = text;
+    // 1. Break banner if wrapped: ✨ ... ✨
+    norm = norm.replace(/([✨⭐🔥💎⚡].*?[✨⭐🔥💎⚡])\s*/gu, '$1\n');
+    // 2. Break before any Capitalized Label : (works across all languages)
+    norm = norm.replace(/(?<=\s|\p{Extended_Pictographic})(?=[\p{Lu}\p{Lt}\u0600-\u06FF][\p{L}\u0600-\u06FF'-]*(?:\s+[\p{L}\u0600-\u06FF'-]+){0,3}\s*:)/gu, '\n');
+    // 3. Break before emojis starting a sentence/thought
+    norm = norm.replace(/(?<=\S)\s*(?=[🚚🤝📞📱📦🛡️⚡💡🎯✓✔]\s*[\p{L}])/gu, '\n');
+
+    rawLines = norm.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean);
+  }
+
+  // Step 2: Semantic categorization of each line (ZERO hardcoded domain keywords)
+  const blocks = [];
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    const isRTL = /[\u0600-\u06FF]/.test(line);
+
+    // 1. Banner Hook check (e.g. ✨ Slogan ✨)
+    const isBanner = /^[✨⭐🔥💎⚡].+[✨⭐🔥💎⚡]$/u.test(line) ||
+      (i === 0 && /^[✨⭐🔥💎⚡]/.test(line) && line.length < 85);
+
+    if (isBanner) {
+      const cleanBanner = line.replace(/^[✨⭐🔥💎⚡\s]+|[✨⭐🔥💎⚡\s]+$/gu, '').trim();
+      blocks.push({
+        id: `b-${i}`,
+        type: 'banner',
+        content: cleanBanner,
+        isRTL
+      });
+      continue;
     }
-  }
 
-  // 2. Extract phone & contact (FR & AR)
-  let phone = null;
-  let phoneLabel = null;
-  const phoneRegex = /(?:📞|📱|Tél(?:éphone)?|Contact|Pour commander(?: ou pour toute information)?|للطلب(?: والاستفسار| أو الاستعلام)?|اتصل بنا)[^:\d\n]*:\s*([0-9\s+]{9,15})/iu;
-  const pMatch = normalized.match(phoneRegex);
-  if (pMatch) {
-    phone = pMatch[1].trim();
-    const fullMatch = pMatch[0];
-    phoneLabel = fullMatch.split(':')[0].replace(/^[📞📱\s]+/, '').trim() || 'Pour commander';
-    normalized = normalized.replace(fullMatch, ' ').trim();
-  } else {
-    const rawPhone = normalized.match(/(?:📞|📱)\s*([0-9\s+]{9,15})/u);
-    if (rawPhone) {
-      phone = rawPhone[1].trim();
-      phoneLabel = 'Pour commander';
-      normalized = normalized.replace(rawPhone[0], ' ').trim();
+    // 2. Key-Value check: [Emoji]? [Label] : [Value]
+    const kvMatch = line.match(/^([\p{Extended_Pictographic}]?\s*)([\p{L}\p{N}\s/'-]{2,30})\s*:\s*(.+)$/u);
+    if (kvMatch && !kvMatch[2].toLowerCase().startsWith('http')) {
+      const icon = kvMatch[1].trim() || null;
+      const key = kvMatch[2].trim().replace(/^[•\-*✓✔►▸+]\s*/, '');
+      const value = kvMatch[3].trim();
+
+      blocks.push({
+        id: `b-${i}`,
+        type: 'key-value',
+        icon,
+        key,
+        value,
+        isRTL
+      });
+      continue;
     }
-  }
 
-  // 3. Extract delivery (FR & AR)
-  let delivery = null;
-  const delRegex = /(?:🚚\s*)?(?:Livraison|التوصيل)\s*:\s*([^🤝📞•\n]+?(?=(?:[.]?\s*(?:🚚|📞|📱|🤝|Paiement|Pour commander|الدفع|للطلب|$))))/iu;
-  const dMatch = normalized.match(delRegex);
-  if (dMatch) {
-    delivery = dMatch[1].replace(/[🚚\s.]+$/, '').trim();
-    normalized = normalized.replace(dMatch[0], ' ').trim();
-  }
-
-  // 4. Extract payment (FR & AR)
-  let payment = null;
-  const payRegex = /(?:🤝\s*)?(?:Paiement|الدفع)\s*:\s*([^🚚📞•\n]+?(?=(?:[.]?\s*(?:🚚|📞|📱|🤝|Livraison|Pour commander|التوصيل|للطلب|$))))/iu;
-  const payMatch = normalized.match(payRegex);
-  if (payMatch) {
-    payment = payMatch[1].replace(/[🤝\s.]+$/, '').trim();
-    normalized = normalized.replace(payMatch[0], ' ').trim();
-  }
-
-  // Clean trailing punctuation or stray emojis
-  normalized = normalized.replace(/[🚚🤝📞📱]/gu, ' ').trim();
-
-  // 5. Split remaining text into logical sections using Unicode boundaries
-  const sectionSplitPattern = /(?=(?:(?:^|[^\p{L}\p{N}])(?:Conception|Couleurs?|Pointures?|Tailles?|Matière|Garantie|Spécifications?|Caractéristique[s]?|Avantages?|Fonctionnalités?|Autonomie|Batterie|Poids|Dimensions?|Composition|المواصفات|المميزات|الألوان|المقاسات|الضمان)[^.\n:]{0,35}:))/giu;
-  
-  let parts = normalized
-    .split(/\r?\n+/)
-    .flatMap((p) => p.split(sectionSplitPattern))
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  let intro = '';
-  const features = [];
-  const bulletPoints = [];
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    const kvMatch = part.match(/^([•\-✓*]|\s*)?\s*([^:\n]{2,35})\s*:\s*(.+)$/u);
-    if (kvMatch && !kvMatch[2].toLowerCase().includes('http')) {
-      const key = kvMatch[2].trim().replace(/^[•\-✓*✨\s]+/, '');
-      const val = kvMatch[3].trim().replace(/[.]\s*$/, '').replace(/\s+/g, ' ');
-      
-      let icon = '✦';
-      const kLow = key.toLowerCase();
-      if (kLow.includes('couleur') || kLow.includes('ألوان')) icon = '🎨';
-      else if (kLow.includes('pointure') || kLow.includes('taille') || kLow.includes('مقاس')) icon = '👟';
-      else if (kLow.includes('conception') || kLow.includes('matière') || kLow.includes('ergonomie') || kLow.includes('مواصفات') || kLow.includes('مميزات')) icon = '✨';
-      else if (kLow.includes('batterie') || kLow.includes('autonomie') || kLow.includes('بطارية')) icon = '🔋';
-      else if (kLow.includes('garantie') || kLow.includes('ضمان')) icon = '🛡️';
-      
-      features.push({ key, value: val, icon });
-    } else if (part.startsWith('•') || part.startsWith('-') || part.startsWith('*') || part.startsWith('✓')) {
-      bulletPoints.push(part.replace(/^[•\-*✓]\s*/, '').trim());
-    } else {
-      if (!intro) {
-        intro = part.replace(/[.]\s*$/, '');
-      } else {
-        bulletPoints.push(part);
-      }
+    // 3. Bullet item check (•, -, *, ✓, numbers)
+    const bulletMatch = line.match(/^([•\-*✓✔►▸+]\s*|\d+\.\s+)(.+)$/u);
+    if (bulletMatch) {
+      blocks.push({
+        id: `b-${i}`,
+        type: 'bullet',
+        content: bulletMatch[2].trim(),
+        isRTL
+      });
+      continue;
     }
+
+    // 4. Leading emoji item check
+    const emojiMatch = line.match(/^([\p{Extended_Pictographic}])\s*(.+)$/u);
+    if (emojiMatch) {
+      blocks.push({
+        id: `b-${i}`,
+        type: 'callout',
+        icon: emojiMatch[1],
+        content: emojiMatch[2].trim(),
+        isRTL
+      });
+      continue;
+    }
+
+    // 5. Standard paragraph
+    blocks.push({
+      id: `b-${i}`,
+      type: 'paragraph',
+      content: line,
+      isRTL
+    });
   }
 
-  return {
-    headline,
-    intro,
-    features,
-    bulletPoints,
-    delivery,
-    payment,
-    phone,
-    phoneLabel
-  };
+  return blocks;
 }
 
 /**
- * Re-formats any unorganized or single-line description into a clean,
- * beautifully formatted multi-line text suitable for the admin textarea.
+ * Universal formatter for admin: organizes any run-on or unspaced text into clean lines
  */
 export function formatRawDescriptionToStructured(raw) {
   if (!raw || typeof raw !== 'string') return '';
-  const parsed = parseProductDescription(raw);
-  if (!parsed) return raw;
+  const blocks = parseSmartDescription(raw);
+  if (!blocks || blocks.length === 0) return raw;
 
   const lines = [];
 
-  if (parsed.headline) {
-    lines.push(`✨ ${parsed.headline} ✨`);
-    lines.push('');
-  }
-
-  if (parsed.intro) {
-    lines.push(parsed.intro);
-    lines.push('');
-  }
-
-  if (parsed.features && parsed.features.length > 0) {
-    for (const f of parsed.features) {
-      lines.push(`• ${f.key} : ${f.value}`);
+  for (const block of blocks) {
+    if (block.type === 'banner') {
+      lines.push(`✨ ${block.content} ✨`);
+      lines.push('');
+    } else if (block.type === 'key-value') {
+      const prefix = block.icon ? `${block.icon} ` : '• ';
+      lines.push(`${prefix}${block.key} : ${block.value}`);
+    } else if (block.type === 'bullet') {
+      lines.push(`• ${block.content}`);
+    } else if (block.type === 'callout') {
+      lines.push(`${block.icon} ${block.content}`);
+    } else {
+      lines.push(block.content);
+      lines.push('');
     }
-    lines.push('');
   }
 
-  if (parsed.bulletPoints && parsed.bulletPoints.length > 0) {
-    for (const bp of parsed.bulletPoints) {
-      lines.push(`• ${bp}`);
-    }
-    lines.push('');
-  }
-
-  if (parsed.delivery) {
-    lines.push(`🚚 Livraison : ${parsed.delivery}`);
-  }
-
-  if (parsed.payment) {
-    lines.push(`🤝 Paiement : ${parsed.payment}`);
-  }
-
-  if (parsed.phone) {
-    lines.push(`📞 ${parsed.phoneLabel || 'Pour commander ou pour toute information'} : ${parsed.phone}`);
-  }
-
-  return lines.join('\n').trim();
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /**
- * Ready-to-use high-converting templates for admins
+ * Universal templates
  */
-export const PRO_DESCRIPTION_TEMPLATE_FR = `✨ [Nom du produit] – Élégance & Confort Moderne ✨
+export const PRO_DESCRIPTION_TEMPLATE_FR = `✨ [Nom de l'article] – Qualité & Élégance ✨
 
-L'alliance parfaite entre bien-être absolu, praticité et style tendance pour votre quotidien.
+Présentation claire et soignée de l'article, ses points forts et ses atouts pour le client.
 
-• Conception : Matériaux de haute qualité, finition soignée et durable
-• Spécificités : Ergonomique, léger et agréable à utiliser
-• Couleurs disponibles : Voir les options ci-dessus
-• Tailles / Pointures : Disponibles en stock
+• Caractéristique 1 : Description du point fort
+• Caractéristique 2 : Détails techniques ou de conception
+• Spécifications : Informations pratiques
 
-🚚 Livraison : Rapide et disponible directement à domicile
+🚚 Livraison : Disponible dans 58 Wilayas à domicile
 🤝 Paiement : À la réception après vérification de votre commande
-📞 Pour commander ou pour toute information : 0663 08 50 69`;
+📞 Pour commander : 0663 08 50 69`;
 
-export const PRO_DESCRIPTION_TEMPLATE_AR = `✨ [اسم المنتج] – أناقة وجودة عالية ✨
+export const PRO_DESCRIPTION_TEMPLATE_AR = `✨ [اسم المنتج] – جودة عالية وتصميم مميز ✨
 
-الخيار المثالي للجمع بين الراحة التامة، العملية والمظهر العصري للاستخدام اليومي.
+تقديم أنيق وشامل للمنتج يوضح أبرز المميزات والفوائد التي يحصل عليها الزبون.
 
-• التصميم والمواد : خامات ممتازة عالية الجودة مع لمسة نهائية متقنة
-• المميزات : مريح، خفيف وعملي للاستعمال اليومي
-• الألوان المتوفرة : متوفر في خيارات متعددة
-• المقاسات : متوفرة حسب الاختيار أعلاه
+• الميزة الأولى : تفاصيل نقطة القوة
+• المواصفات : الجودة، الخامة أو التفاصيل التقنية
+• الاستعمال : مناسب وعملي للاستخدام اليومي
 
-🚚 التوصيل : سريع ومتوفر مباشرة لباب المنزل
-🤝 الدفع : عند الاستلام بعد معاينة وتفقد الطلب
-📞 للطلب أو لأي استفسار : 0663 08 50 69`;
+🚚 التوصيل : متوفر وسريع لباب المنزل
+🤝 الدفع : عند الاستلام بعد معاينة الطلب
+📞 للطلب والاستفسار : 0663 08 50 69`;

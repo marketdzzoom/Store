@@ -1,44 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Truck, 
-  ShieldCheck, 
-  PhoneCall, 
   Sparkles, 
   CheckCircle2, 
-  Info,
-  ChevronDown,
-  ChevronUp
+  ChevronDown, 
+  ChevronUp,
+  PhoneCall
 } from 'lucide-react';
-import { parseProductDescription } from '../utils/descriptionParser';
+import { parseSmartDescription } from '../utils/descriptionParser';
 
+/**
+ * Universal Smart Product Description
+ * Renders any description dynamically into an organized, readable,
+ * and high-impact layout with collapsible "Voir plus" support.
+ * ZERO hardcoded domain assumptions.
+ */
 export default function ProductDescription({ 
   description, 
   lang = 'fr', 
-  showPhoneCTA = true, 
-  showTrustCards = true,
+  compact = false,
+  maxInitialBlocks = 4,
   className = ''
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (!description || typeof description !== 'string' || !description.trim()) {
     return null;
   }
 
-  const isRTL = lang === 'ar' || /[\u0600-\u06FF]/.test(description);
-  const parsed = parseProductDescription(description);
+  const isRTLGlobal = lang === 'ar' || /[\u0600-\u06FF]/.test(description);
+  const blocks = parseSmartDescription(description);
 
-  // If parsing didn't find any specific sections, display standard readable formatted paragraphs
-  const hasStructure = parsed && (
-    parsed.headline || 
-    (parsed.features && parsed.features.length > 0) || 
-    (parsed.bulletPoints && parsed.bulletPoints.length > 0) || 
-    parsed.delivery || 
-    parsed.payment || 
-    parsed.phone
-  );
-
-  if (!hasStructure) {
+  if (!blocks || blocks.length === 0) {
     return (
       <div 
-        dir={isRTL ? 'rtl' : 'ltr'} 
+        dir={isRTLGlobal ? 'rtl' : 'ltr'} 
         className={`text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line ${className}`}
       >
         {description}
@@ -46,119 +41,163 @@ export default function ProductDescription({
     );
   }
 
+  // Determine if we should enable the smart collapsible toggle
+  const shouldCollapse = !compact && blocks.length > maxInitialBlocks;
+  const displayedBlocks = shouldCollapse && !isExpanded 
+    ? blocks.slice(0, maxInitialBlocks) 
+    : blocks;
+
   return (
     <div 
-      dir={isRTL ? 'rtl' : 'ltr'} 
-      className={`space-y-3.5 ${className}`}
+      dir={isRTLGlobal ? 'rtl' : 'ltr'} 
+      className={`space-y-2.5 transition-all duration-300 ${className}`}
     >
-      {/* 1. Impactful Headline / Hook Banner */}
-      {parsed.headline && (
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 dark:from-amber-500/20 dark:via-orange-500/10 dark:to-transparent border border-amber-300/80 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-extrabold shadow-2xs">
-          <Sparkles className="w-4 h-4 text-brand-orange shrink-0 animate-pulse" />
-          <span>{parsed.headline}</span>
-        </div>
-      )}
+      {displayedBlocks.map((block) => {
+        const isBlockRTL = block.isRTL ?? isRTLGlobal;
 
-      {/* 2. Main Lead / Intro Paragraph */}
-      {parsed.intro && (
-        <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal">
-          {parsed.intro}
-        </p>
-      )}
+        switch (block.type) {
+          case 'banner':
+            return (
+              <div 
+                key={block.id}
+                dir={isBlockRTL ? 'rtl' : 'ltr'}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 dark:from-amber-500/20 dark:via-orange-500/10 dark:to-transparent border border-amber-300/80 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-extrabold shadow-2xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-brand-orange shrink-0 animate-pulse" />
+                <span>{block.content}</span>
+              </div>
+            );
 
-      {/* 3. Structured Key Features & Specifications */}
-      {parsed.features && parsed.features.length > 0 && (
-        <div className="space-y-2 pt-0.5">
-          {parsed.features.map((feat, idx) => (
-            <div 
-              key={idx} 
-              className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 text-xs shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-            >
-              <span className="text-sm shrink-0 leading-none mt-0.5">
-                {feat.icon || '✦'}
-              </span>
-              <div className="flex-1 min-w-0 leading-relaxed">
-                <span className="font-extrabold text-slate-900 dark:text-white mr-1.5">
-                  {feat.key} :
+          case 'key-value':
+            return (
+              <div 
+                key={block.id}
+                dir={isBlockRTL ? 'rtl' : 'ltr'}
+                className="flex items-start gap-2 p-2 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 text-xs shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                <span className="text-xs shrink-0 leading-none mt-0.5 text-brand-orange font-bold">
+                  {block.icon || '✦'}
                 </span>
-                <span className="text-slate-700 dark:text-slate-300 font-medium">
-                  {feat.value}
+                <div className="flex-1 min-w-0 leading-relaxed">
+                  <span className="font-extrabold text-slate-900 dark:text-white mr-1.5">
+                    {block.key} :
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">
+                    {renderFormattedTextWithLinks(block.value)}
+                  </span>
+                </div>
+              </div>
+            );
+
+          case 'bullet':
+            return (
+              <div 
+                key={block.id}
+                dir={isBlockRTL ? 'rtl' : 'ltr'}
+                className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 leading-relaxed px-0.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                <span className="flex-1 min-w-0">
+                  {renderFormattedTextWithLinks(block.content)}
                 </span>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            );
 
-      {/* 4. Additional Bullet Points */}
-      {parsed.bulletPoints && parsed.bulletPoints.length > 0 && (
-        <ul className="space-y-1.5 pt-0.5">
-          {parsed.bulletPoints.map((bp, idx) => (
-            <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-              <span>{bp}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+          case 'callout':
+            return (
+              <div 
+                key={block.id}
+                dir={isBlockRTL ? 'rtl' : 'ltr'}
+                className="flex items-center justify-between gap-2 p-2 px-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-sm shrink-0 leading-none">{block.icon}</span>
+                  <span className="text-slate-700 dark:text-slate-300 leading-tight">
+                    {renderFormattedTextWithLinks(block.content)}
+                  </span>
+                </div>
+              </div>
+            );
 
-      {/* 5. Trust Assurances: Delivery & Payment Cards */}
-      {showTrustCards && (parsed.delivery || parsed.payment) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          {parsed.delivery && (
-            <div className="flex items-start gap-2.5 p-2.5 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200/90 dark:border-emerald-800/60 shadow-2xs">
-              <div className="w-7 h-7 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                <Truck className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-xs min-w-0">
-                <span className="font-extrabold text-emerald-950 dark:text-emerald-200 block text-[11px]">
-                  {isRTL ? 'التوصيل السريع' : 'Livraison à domicile'}
-                </span>
-                <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium leading-tight block mt-0.5">
-                  {parsed.delivery}
-                </span>
-              </div>
-            </div>
-          )}
+          case 'paragraph':
+          default:
+            return (
+              <p 
+                key={block.id}
+                dir={isBlockRTL ? 'rtl' : 'ltr'}
+                className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal"
+              >
+                {renderFormattedTextWithLinks(block.content)}
+              </p>
+            );
+        }
+      })}
 
-          {parsed.payment && (
-            <div className="flex items-start gap-2.5 p-2.5 rounded-2xl bg-sky-50/90 dark:bg-sky-950/30 border border-sky-200/90 dark:border-sky-800/60 shadow-2xs">
-              <div className="w-7 h-7 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-xs min-w-0">
-                <span className="font-extrabold text-sky-950 dark:text-sky-200 block text-[11px]">
-                  {isRTL ? 'الدفع الآمن' : 'Paiement à la réception'}
-                </span>
-                <span className="text-[11px] text-sky-800 dark:text-sky-300 font-medium leading-tight block mt-0.5">
-                  {parsed.payment}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 6. Direct Order by Phone / Contact Callout */}
-      {showPhoneCTA && parsed.phone && (
-        <a
-          href={`tel:${parsed.phone.replace(/[\s-]/g, '')}`}
-          className="inline-flex items-center justify-between gap-2.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-slate-800 dark:to-slate-850 border border-amber-300/80 dark:border-slate-700 hover:border-brand-orange text-xs transition-all shadow-2xs group w-full"
-          title={isRTL ? 'اضغط للاتصال المباشر' : 'Cliquer pour appeler directement'}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-5 h-5 rounded-lg bg-brand-orange text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-              <PhoneCall className="w-3 h-3" />
+      {/* Smart Collapsible "Voir plus / Voir moins" toggle */}
+      {shouldCollapse && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="text-xs font-bold text-brand-orange hover:text-brand-orange-hover inline-flex items-center gap-1 transition-colors active:scale-95 py-0.5"
+          >
+            <span>
+              {isExpanded
+                ? (isRTLGlobal ? 'عرض تفاصيل أقل ▴' : 'Voir moins ▴')
+                : (isRTLGlobal ? `عرض كامل التفاصيل (${blocks.length - maxInitialBlocks}+) ▾` : `Voir tous les détails (${blocks.length - maxInitialBlocks}+) ▾`)}
             </span>
-            <span className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
-              {parsed.phoneLabel || (isRTL ? 'للطلب والاستفسار' : 'Pour commander')} : <strong className="font-black text-slate-900 dark:text-white">{parsed.phone}</strong>
-            </span>
-          </div>
-          <span className="text-[10px] font-bold text-brand-orange bg-white dark:bg-slate-750 px-2 py-0.5 rounded-lg border border-brand-orange/20 group-hover:bg-brand-orange group-hover:text-white transition-colors shrink-0">
-            {isRTL ? 'اتصل 📞' : 'Appeler 📞'}
-          </span>
-        </a>
+          </button>
+        </div>
       )}
     </div>
   );
+}
+
+/**
+ * Automatically detects phone numbers in any text and renders them as clickable links
+ */
+function renderFormattedTextWithLinks(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  // Phone regex for Algeria and standard formats: 05/06/07 followed by 8 digits with optional spaces
+  const phonePattern = /(?:(?:\+?213|0)[567](?:[\s.-]?\d{2}){4}|(?:\+?213|0)[567]\d{8})/g;
+  
+  const matches = [...text.matchAll(phonePattern)];
+  if (matches.length === 0) {
+    return text;
+  }
+
+  const parts = [];
+  let lastIndex = 0;
+
+  matches.forEach((match, idx) => {
+    const start = match.index;
+    const phoneStr = match[0];
+    const cleanTel = phoneStr.replace(/[\s.-]/g, '');
+
+    if (start > lastIndex) {
+      parts.push(text.substring(lastIndex, start));
+    }
+
+    parts.push(
+      <a
+        key={`tel-${idx}`}
+        href={`tel:${cleanTel}`}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange font-bold text-xs transition-colors"
+        title="Cliquer pour appeler"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <PhoneCall className="w-2.5 h-2.5" />
+        <span>{phoneStr}</span>
+      </a>
+    );
+
+    lastIndex = start + phoneStr.length;
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts;
 }
