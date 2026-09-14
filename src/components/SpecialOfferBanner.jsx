@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS } from '../data/translations';
+import ProductDescription from './ProductDescription';
 
 export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang = 'fr' }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
@@ -109,9 +110,14 @@ export default function SpecialOfferBanner({ offer, onQuickView, onBuyNow, lang 
             {titleText}
           </h2>
 
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-            {descText}
-          </p>
+          <div className="max-w-xl mx-auto lg:mx-0">
+            <ProductDescription 
+              description={descText} 
+              lang={lang} 
+              showPhoneCTA={false} 
+              showTrustCards={false} 
+            />
+          </div>
 
           {/* Price & Discount Display */}
           <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">

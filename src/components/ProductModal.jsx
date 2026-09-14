@@ -19,6 +19,7 @@ import {
 import { formatPrice } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle } from '../utils/colors';
+import ProductDescription from './ProductDescription';
 
 export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, lang = 'fr' }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -307,10 +308,15 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 )}
               </div>
 
-              {/* Description */}
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
-                {descText}
-              </p>
+              {/* Structured & Impactful Description */}
+              <div className="mb-5">
+                <ProductDescription 
+                  description={descText} 
+                  lang={lang} 
+                  showPhoneCTA={true} 
+                  showTrustCards={true} 
+                />
+              </div>
 
               {/* Product Specificities & Variants: Sizes & Colors */}
               {!isOutOfStock && (product.sizes?.length > 0 || product.colors?.length > 0) && (
