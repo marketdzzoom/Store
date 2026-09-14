@@ -23,6 +23,12 @@ export const DEFAULT_SPECIAL_OFFER = {
     "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
     "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80"
   ],
+  colors: ["Noir Mat", "Blanc Perle", "Bleu Nuit"],
+  colorImageMap: {
+    "Noir Mat": 0,
+    "Blanc Perle": 1,
+    "Bleu Nuit": 2
+  },
   productId: "prod-1",
   countdownHours: 24
 };

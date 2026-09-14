@@ -199,43 +199,40 @@ export function getColorStyle(rawColor) {
 
 /**
  * Resolves the corresponding image index for a chosen color variant.
- * 1. Checks explicit product.colorImageMap
- * 2. Checks order matching (1st color -> 1st image, 2nd color -> 2nd image)
- * 3. Checks semantic keyword match in image URLs
+ * 1. Checks explicit product.colorImageMap (configured by admin visually)
+ * 2. Checks keyword match in image URLs/filenames
+ * Returns -1 if no matching photo is defined (avoids switching to an incorrect photo).
  * 
  * @param {string} colorName - Name of the selected color (e.g. "Marron", "Noir", "Rouge")
  * @param {object} product - Product object with colors, images, colorImageMap
  * @param {string[]} imageList - List of images
- * @returns {number} 0-based image index
+ * @returns {number} 0-based image index or -1 if no confirmed match
  */
 export function getImageIndexForColor(colorName, product, imageList = []) {
-  if (!colorName || !product) return 0;
+  if (!colorName || !product) return -1;
   const list = (imageList && imageList.length > 0)
     ? imageList
     : (product.images && product.images.length > 0 ? product.images : [product.image]);
 
-  if (!list || list.length <= 1) return 0;
+  if (!list || list.length <= 1) return -1;
 
   const cleanColor = String(colorName).trim().toLowerCase();
 
-  // 1. Explicit colorImageMap mapping
+  // 1. Explicit colorImageMap mapping (Exact choice configured in Admin)
   if (product.colorImageMap && typeof product.colorImageMap === 'object') {
-    const directUrl = product.colorImageMap[colorName] || product.colorImageMap[cleanColor];
-    if (directUrl) {
-      const idx = list.findIndex((img) => img === directUrl);
-      if (idx !== -1) return idx;
+    const directVal = product.colorImageMap[colorName] ?? product.colorImageMap[cleanColor];
+    if (directVal !== undefined && directVal !== null) {
+      if (typeof directVal === 'number' && directVal >= 0 && directVal < list.length) {
+        return directVal;
+      }
+      if (typeof directVal === 'string') {
+        const idx = list.findIndex((img) => img === directVal);
+        if (idx !== -1) return idx;
+      }
     }
   }
 
-  // 2. Order-based 1-to-1 matching (e.g. 1st color -> 1st image, 2nd color -> 2nd image)
-  if (Array.isArray(product.colors) && product.colors.length > 0) {
-    const colIdx = product.colors.findIndex((c) => String(c).trim().toLowerCase() === cleanColor);
-    if (colIdx !== -1 && colIdx < list.length) {
-      return colIdx;
-    }
-  }
-
-  // 3. Keyword matching in image URLs
+  // 2. Keyword matching in image URLs (e.g. image contains "noir", "black", "marron", "beige")
   const words = cleanColor.split(/[\s-]+/).filter((w) => w.length > 2);
   for (let i = 0; i < list.length; i++) {
     const imgUrlLower = String(list[i]).toLowerCase();
@@ -246,11 +243,14 @@ export function getImageIndexForColor(colorName, product, imageList = []) {
     }
   }
 
-  return 0;
+  // If no confirmed photo is linked to this color, do not switch arbitrarily
+  return -1;
 }
 
 /**
  * Resolves the color associated with a given image index (e.g. when user clicks thumbnail)
+ * Only returns a color if that image is explicitly associated in colorImageMap.
+ * 
  * @param {number} imageIndex - 0-based index of the active photo
  * @param {object} product - Product object
  * @returns {string|null} The matched color name or null
@@ -259,8 +259,14 @@ export function getColorForImageIndex(imageIndex, product) {
   if (!product || !Array.isArray(product.colors) || product.colors.length === 0) {
     return null;
   }
-  if (imageIndex >= 0 && imageIndex < product.colors.length) {
-    return product.colors[imageIndex];
+  if (product.colorImageMap && typeof product.colorImageMap === 'object') {
+    const list = product.images || [product.image];
+    const currentImgUrl = list[imageIndex];
+    for (const [colName, val] of Object.entries(product.colorImageMap)) {
+      if (val === imageIndex || val === currentImgUrl) {
+        return colName;
+      }
+    }
   }
   return null;
 }

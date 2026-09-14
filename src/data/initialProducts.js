@@ -14,6 +14,11 @@ export const INITIAL_PRODUCTS = [
       "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80"
     ],
     colors: ["Noir Mat", "Blanc Perle", "Bleu Nuit"],
+    colorImageMap: {
+      "Noir Mat": 0,
+      "Blanc Perle": 1,
+      "Bleu Nuit": 2
+    },
     inStock: true,
     stockQuantity: 15,
     rating: 4.9,
@@ -35,6 +40,11 @@ export const INITIAL_PRODUCTS = [
     ],
     sizes: ["41mm", "45mm", "49mm"],
     colors: ["Noir Titane", "Argent", "Vert Forêt"],
+    colorImageMap: {
+      "Noir Titane": 0,
+      "Argent": 1,
+      "Vert Forêt": 2
+    },
     inStock: true,
     stockQuantity: 8,
     rating: 4.8,

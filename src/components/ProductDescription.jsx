@@ -53,7 +53,7 @@ export default function ProductDescription({
   return (
     <div 
       dir={isRTLGlobal ? 'rtl' : 'ltr'} 
-      className={`space-y-2.5 transition-all duration-300 ${className}`}
+      className={`space-y-1.5 transition-all duration-300 ${className}`}
     >
       {displayedBlocks.map((block) => {
         const isBlockRTL = block.isRTL ?? isRTLGlobal;
@@ -66,11 +66,11 @@ export default function ProductDescription({
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
                 className={
                   isDark
-                    ? "inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/20 via-brand-orange/15 to-amber-500/10 border border-amber-400/50 text-amber-300 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.25)] backdrop-blur-sm"
+                    ? "inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-bold shadow-2xs mb-1"
                     : "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 dark:from-amber-500/20 dark:via-orange-500/10 dark:to-transparent border border-amber-300/80 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-extrabold shadow-2xs"
                 }
               >
-                <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-amber-300 animate-pulse' : 'text-brand-orange animate-pulse'}`} />
+                <Sparkles className={`w-3 h-3 shrink-0 ${isDark ? 'text-amber-300' : 'text-brand-orange animate-pulse'}`} />
                 <span>{block.content}</span>
               </div>
             );
@@ -82,18 +82,18 @@ export default function ProductDescription({
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
                 className={
                   isDark
-                    ? "flex items-start gap-2.5 p-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 hover:border-brand-orange/50 backdrop-blur-md text-xs sm:text-sm shadow-sm transition-all duration-200"
+                    ? "flex items-start gap-2 text-xs sm:text-sm text-slate-200 py-0.5 leading-relaxed"
                     : "flex items-start gap-2 p-2 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 text-xs shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
                 }
               >
-                <span className={`text-xs shrink-0 leading-none mt-0.5 font-bold ${isDark ? 'text-brand-orange drop-shadow-sm' : 'text-brand-orange'}`}>
+                <span className={isDark ? "text-amber-400 font-bold shrink-0 mt-0.5 text-xs leading-none" : "text-xs shrink-0 leading-none mt-0.5 text-brand-orange font-bold"}>
                   {block.icon || '✦'}
                 </span>
                 <div className="flex-1 min-w-0 leading-relaxed">
-                  <span className={isDark ? "font-black text-white mr-1.5 tracking-wide" : "font-extrabold text-slate-900 dark:text-white mr-1.5"}>
+                  <span className={isDark ? "font-bold text-amber-300 mr-1.5" : "font-extrabold text-slate-900 dark:text-white mr-1.5"}>
                     {block.key} :
                   </span>
-                  <span className={isDark ? "text-slate-200 font-medium" : "text-slate-700 dark:text-slate-300 font-medium"}>
+                  <span className={isDark ? "text-slate-200 font-normal" : "text-slate-700 dark:text-slate-300 font-medium"}>
                     {renderFormattedTextWithLinks(block.value, isDark)}
                   </span>
                 </div>
@@ -105,11 +105,13 @@ export default function ProductDescription({
               <div 
                 key={block.id}
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
-                className={`font-black text-xs sm:text-sm uppercase tracking-wider pt-2 pb-1 flex items-center gap-2 ${
-                  isDark ? 'text-slate-200 border-b border-white/10' : 'text-slate-800 dark:text-slate-200 border-b border-slate-200/70 dark:border-slate-700/70'
-                }`}
+                className={
+                  isDark
+                    ? "font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-300 pt-2 pb-0.5 flex items-center gap-1.5"
+                    : "font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200/70 dark:border-slate-700/70 pt-2 pb-1 flex items-center gap-2"
+                }
               >
-                <span className="w-2 h-2 rounded-full bg-brand-orange shrink-0 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                 <span>{block.content}</span>
               </div>
             );
@@ -119,14 +121,16 @@ export default function ProductDescription({
               <div 
                 key={block.id}
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
-                className={`flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed px-1 py-0.5 ${
-                  isDark ? 'text-slate-100 font-medium' : 'text-slate-700 dark:text-slate-300 font-medium'
-                }`}
+                className={
+                  isDark
+                    ? "flex items-start gap-2 text-xs sm:text-sm text-slate-200 py-0.5 leading-relaxed"
+                    : "flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed px-1 py-0.5 text-slate-700 dark:text-slate-300 font-medium"
+                }
               >
                 {block.icon ? (
-                  <span className="text-base shrink-0 leading-none select-none">{block.icon}</span>
+                  <span className="text-sm shrink-0 leading-none select-none mt-0.5">{block.icon}</span>
                 ) : (
-                  <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${isDark ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]' : 'text-emerald-500'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isDark ? 'text-amber-400' : 'text-emerald-500'}`} />
                 )}
                 <span className="flex-1 min-w-0">
                   {renderFormattedTextWithLinks(block.content, isDark)}
@@ -141,16 +145,14 @@ export default function ProductDescription({
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
                 className={
                   isDark
-                    ? "flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/[0.08] border border-white/15 text-slate-100 text-xs sm:text-sm backdrop-blur-md shadow-sm"
+                    ? "flex items-start gap-2 text-xs sm:text-sm text-slate-200 py-0.5 leading-relaxed"
                     : "flex items-center justify-between gap-2 p-2 px-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs"
                 }
               >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="text-sm shrink-0 leading-none">{block.icon}</span>
-                  <span className={isDark ? "text-slate-200 font-medium leading-tight" : "text-slate-700 dark:text-slate-300 leading-tight"}>
-                    {renderFormattedTextWithLinks(block.content, isDark)}
-                  </span>
-                </div>
+                <span className="text-sm shrink-0 leading-none mt-0.5">{block.icon}</span>
+                <span className="flex-1 min-w-0">
+                  {renderFormattedTextWithLinks(block.content, isDark)}
+                </span>
               </div>
             );
 
@@ -162,7 +164,7 @@ export default function ProductDescription({
                 dir={isBlockRTL ? 'rtl' : 'ltr'}
                 className={
                   isDark
-                    ? "text-xs sm:text-sm text-slate-200 leading-relaxed font-normal"
+                    ? "text-xs sm:text-sm text-slate-200 leading-relaxed font-normal py-0.5"
                     : "text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal"
                 }
               >
@@ -180,7 +182,7 @@ export default function ProductDescription({
             onClick={() => setIsExpanded((prev) => !prev)}
             className={
               isDark
-                ? "text-xs font-black inline-flex items-center gap-1.5 transition-all active:scale-95 py-1 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-brand-orange hover:text-amber-300 shadow-sm"
+                ? "text-xs font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 transition-colors pt-0.5"
                 : "text-xs font-bold text-brand-orange hover:text-brand-orange-hover inline-flex items-center gap-1 transition-colors active:scale-95 py-0.5"
             }
           >
@@ -226,7 +228,7 @@ function renderFormattedTextWithLinks(text, isDark = false) {
         key={`phone-${idx}`} 
         className={
           isDark
-            ? "font-black text-brand-orange bg-white/10 px-2 py-0.5 rounded-lg border border-white/20 tracking-wider inline-block my-0.5"
+            ? "font-bold text-amber-300 tracking-wider"
             : "font-extrabold text-slate-900 dark:text-white tracking-wider"
         }
       >

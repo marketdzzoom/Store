@@ -45,6 +45,7 @@ import {
   PRO_DESCRIPTION_TEMPLATE_AR 
 } from '../utils/descriptionParser';
 import ProductDescription from './ProductDescription';
+import ColorImageBinder from './ColorImageBinder';
 
 const MONTHS_LIST = [
   { value: 'Tous', label: 'Tous les mois' },
@@ -110,6 +111,7 @@ export default function AdminModal({
   // Multi-Image State
   const [imageUrlsText, setImageUrlsText] = useState('');
   const [imageFilesPreviews, setImageFilesPreviews] = useState([]);
+  const [colorImageMap, setColorImageMap] = useState({});
 
   // Special Offer Admin Form State
   const [soEnabled, setSoEnabled] = useState(specialOffer ? specialOffer.enabled : true);
@@ -124,6 +126,12 @@ export default function AdminModal({
   const [soDescriptionAr, setSoDescriptionAr] = useState(specialOffer ? specialOffer.descriptionAr : '');
   const [soImageFiles, setSoImageFiles] = useState(specialOffer ? (specialOffer.images || []) : []);
   const [soUrlsText, setSoUrlsText] = useState('');
+  const [soColorsInput, setSoColorsInput] = useState(
+    specialOffer && specialOffer.colors && specialOffer.colors.length > 0
+      ? specialOffer.colors.join(', ')
+      : ''
+  );
+  const [soColorImageMap, setSoColorImageMap] = useState(specialOffer?.colorImageMap || {});
   const [selectedSoProductId, setSelectedSoProductId] = useState(specialOffer?.productId || '');
   const [soSearchTerm, setSoSearchTerm] = useState('');
 
@@ -293,6 +301,19 @@ export default function AdminModal({
 
   const handleRemovePreview = (index) => {
     setImageFilesPreviews((prev) => prev.filter((_, i) => i !== index));
+    setColorImageMap((prevMap) => {
+      const newMap = {};
+      for (const [col, val] of Object.entries(prevMap || {})) {
+        if (typeof val === 'number') {
+          if (val !== index) {
+            newMap[col] = val > index ? val - 1 : val;
+          }
+        } else {
+          newMap[col] = val;
+        }
+      }
+      return newMap;
+    });
   };
 
   // Handle Uploading Multiple Image Files for Special Offer
@@ -315,6 +336,19 @@ export default function AdminModal({
 
   const handleRemoveSoImage = (index) => {
     setSoImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setSoColorImageMap((prevMap) => {
+      const newMap = {};
+      for (const [col, val] of Object.entries(prevMap || {})) {
+        if (typeof val === 'number') {
+          if (val !== index) {
+            newMap[col] = val > index ? val - 1 : val;
+          }
+        } else {
+          newMap[col] = val;
+        }
+      }
+      return newMap;
+    });
   };
 
   const handleSelectProductForSpecialOffer = (prodId, autoPublish = false) => {
@@ -331,6 +365,8 @@ export default function AdminModal({
       const pImages = p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
       setSoImageFiles(pImages);
       setSoUrlsText('');
+      setSoColorsInput(p.colors && p.colors.length > 0 ? p.colors.join(', ') : '');
+      setSoColorImageMap(p.colorImageMap || {});
       setSoEnabled(true);
 
       if (autoPublish) {
@@ -380,6 +416,7 @@ export default function AdminModal({
     setIsVisible(prod.isVisible !== false);
     setSizesInput(prod.sizes && prod.sizes.length > 0 ? prod.sizes.join(', ') : '');
     setColorsInput(prod.colors && prod.colors.length > 0 ? prod.colors.join(', ') : '');
+    setColorImageMap(prod.colorImageMap || {});
     setImageFilesPreviews(prod.images && prod.images.length > 0 ? prod.images : (prod.image ? [prod.image] : []));
     setImageUrlsText('');
     setActiveTab('add');
@@ -395,6 +432,7 @@ export default function AdminModal({
     setDescriptionAr('');
     setSizesInput('');
     setColorsInput('');
+    setColorImageMap({});
     setImageUrlsText('');
     setImageFilesPreviews([]);
     setStockQuantity('10');
@@ -459,6 +497,7 @@ export default function AdminModal({
         images: finalImageList,
         sizes: parsedSizes,
         colors: parsedColors,
+        colorImageMap: colorImageMap,
         inStock: inStock,
         stockQuantity: inStock ? parseInt(stockQuantity || 10) : 0,
         isVisible: isVisible,
@@ -489,6 +528,7 @@ export default function AdminModal({
       images: finalImageList,
       sizes: parsedSizes,
       colors: parsedColors,
+      colorImageMap: colorImageMap,
       inStock: inStock,
       stockQuantity: inStock ? parseInt(stockQuantity || 10) : 0,
       isVisible: isVisible,
@@ -520,6 +560,11 @@ export default function AdminModal({
     const defaultFallback = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80";
     const finalImages = allImages.length > 0 ? allImages : [defaultFallback];
 
+    const parsedSoColors = soColorsInput
+      .split(',')
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
     const targetProduct = products.find((p) => p.id === (selectedSoProductId || specialOffer?.productId));
     const updatedOffer = {
       enabled: soEnabled,
@@ -533,9 +578,11 @@ export default function AdminModal({
       description: soDescription.trim(),
       descriptionAr: soDescriptionAr.trim() || soDescription.trim(),
       images: finalImages,
-      colors: targetProduct?.colors || specialOffer?.colors || [],
+      colors: parsedSoColors.length > 0 ? parsedSoColors : (targetProduct?.colors || specialOffer?.colors || []),
       sizes: targetProduct?.sizes || specialOffer?.sizes || [],
-      colorImageMap: targetProduct?.colorImageMap || specialOffer?.colorImageMap || {},
+      colorImageMap: Object.keys(soColorImageMap).length > 0
+        ? soColorImageMap
+        : (targetProduct?.colorImageMap || specialOffer?.colorImageMap || {}),
       productId: selectedSoProductId || specialOffer?.productId || null,
       countdownHours: 24
     };
@@ -1362,6 +1409,35 @@ export default function AdminModal({
                     ))}
                   </div>
                 )}
+
+                {/* Visual Color-to-Photo Binder */}
+                {(() => {
+                  const currentColors = colorsInput
+                    .split(',')
+                    .map((c) => c.trim())
+                    .filter(Boolean);
+                  const currentImages = [
+                    ...imageFilesPreviews,
+                    ...imageUrlsText
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  ];
+                  if (currentColors.length > 0 && currentImages.length > 1) {
+                    return (
+                      <div className="pt-2">
+                        <ColorImageBinder
+                          colors={currentColors}
+                          images={currentImages}
+                          colorImageMap={colorImageMap}
+                          onChange={setColorImageMap}
+                          lang="fr"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Visibility Option */}
@@ -1771,6 +1847,19 @@ export default function AdminModal({
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  🎨 Couleurs de l'Offre Spéciale (séparées par des virgules)
+                </label>
+                <input
+                  type="text"
+                  value={soColorsInput}
+                  onChange={(e) => setSoColorsInput(e.target.value)}
+                  placeholder="Ex: Beige, Marron, Noir"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-medium"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span className="flex items-center gap-1 text-brand-orange">
@@ -1822,6 +1911,35 @@ export default function AdminModal({
                     ))}
                   </div>
                 )}
+
+                {/* Visual Color-to-Photo Binder for Special Offer */}
+                {(() => {
+                  const currentColors = soColorsInput
+                    .split(',')
+                    .map((c) => c.trim())
+                    .filter(Boolean);
+                  const currentImages = [
+                    ...soImageFiles,
+                    ...soUrlsText
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  ];
+                  if (currentColors.length > 0 && currentImages.length > 1) {
+                    return (
+                      <div className="pt-2">
+                        <ColorImageBinder
+                          colors={currentColors}
+                          images={currentImages}
+                          colorImageMap={soColorImageMap}
+                          onChange={setSoColorImageMap}
+                          lang="fr"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <button
