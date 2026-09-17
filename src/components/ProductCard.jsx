@@ -97,17 +97,23 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
           <button
             type="button"
             onClick={handleCopyLink}
-            title={copiedLink ? (lang === 'ar' ? 'تم نسخ الرابط!' : 'Lien copié !') : (lang === 'ar' ? 'نسخ رابط الإعلان' : 'Copier le lien publicitaire')}
-            className={`p-2 rounded-full shadow-md backdrop-blur-sm transition-all transform hover:scale-110 active:scale-95 border flex items-center gap-1 ${
+            title={copiedLink ? (lang === 'ar' ? 'تم نسخ الرابط!' : 'Lien copié !') : (lang === 'ar' ? 'نسخ رابط الإعلان' : 'Copier le lien publicitaire (Landing Page)')}
+            className={`p-1.5 sm:p-2 rounded-xl shadow-md backdrop-blur-sm transition-all transform hover:scale-105 active:scale-95 border flex items-center gap-1.5 ${
               copiedLink
                 ? 'bg-emerald-600 text-white border-emerald-500 scale-105'
-                : 'bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-brand-orange hover:bg-white dark:hover:bg-slate-800 border-slate-200/60 dark:border-slate-700/60'
+                : 'bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-300 hover:text-brand-orange hover:bg-white dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-700/80'
             }`}
           >
             {copiedLink ? (
-              <Check className="w-3.5 h-3.5 text-white" />
+              <>
+                <Check className="w-3.5 h-3.5 text-white shrink-0" />
+                <span className="text-[10px] font-bold text-white pr-0.5">{lang === 'ar' ? 'تم النسخ!' : 'Copié !'}</span>
+              </>
             ) : (
-              <Share2 className="w-3.5 h-3.5" />
+              <>
+                <Share2 className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 hidden group-hover:inline transition-all">{lang === 'ar' ? 'رابط الإعلان' : 'Lien Pub'}</span>
+              </>
             )}
           </button>
         </div>

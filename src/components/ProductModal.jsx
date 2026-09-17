@@ -212,7 +212,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               title="Copier le lien direct de cette page pour vos publicités ou WhatsApp"
             >
               {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-white" /> : <Share2 className="w-3.5 h-3.5 text-brand-orange" />}
-              <span className="hidden sm:inline">{copiedLink ? '✓ Lien copié !' : 'Partager / Lien Pub'}</span>
+              <span className="text-[11px] sm:text-xs">{copiedLink ? 'Lien copié !' : 'Partager / Lien Pub'}</span>
             </button>
 
             <button
