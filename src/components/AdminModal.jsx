@@ -2327,117 +2327,140 @@ export default function AdminModal({
                       return (
                         <div 
                           key={p.id} 
-                          className={`p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all border ${
+                          className={`p-3.5 sm:p-4 rounded-2xl flex flex-col gap-3 transition-all border shadow-xs ${
                             isHidden 
                               ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50' 
                               : isCurrentSpecialOffer
-                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60 shadow-xs'
-                              : 'bg-slate-50/70 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800'
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
+                              : 'bg-slate-50/80 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                         >
-                          {/* Top row on mobile, Left col on desktop */}
-                          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                            {/* Fixed image container strictly locked to 56px x 56px */}
-                            <div className="relative w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] max-w-[3.5rem] max-h-[3.5rem] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
-                              <img
-                                src={p.images ? p.images[0] : p.image}
-                                alt={p.title}
-                                className={`w-full h-full object-cover ${
-                                  isHidden ? 'opacity-50 grayscale-[50%]' : isOut ? 'grayscale opacity-70' : ''
-                                }`}
-                                loading="lazy"
-                              />
-                              {isHidden && (
-                                <span 
-                                  className="absolute top-1 right-1 bg-amber-500 text-white p-0.5 rounded-full shadow"
-                                  title="Article masqué aux clients"
-                                >
-                                  <EyeOff className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0 text-left">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate" title={p.title}>
-                                {p.title}
-                              </h4>
-
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                <span className="text-xs font-black text-brand-orange">
-                                  {formatPrice(p.price)}
-                                </span>
-
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700/60 px-1.5 py-0.5 rounded font-semibold">
-                                  {p.category}
-                                </span>
-
-                                {isCurrentSpecialOffer && (
-                                  <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-xs whitespace-nowrap">
-                                    <Zap className="w-2.5 h-2.5 fill-white" />
-                                    ⭐ Offre Spéciale
-                                  </span>
-                                )}
-
-                                {isHidden ? (
-                                  <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-amber-200 dark:border-amber-900 whitespace-nowrap">
+                          {/* Row 1: Product Details (Full Width, No Truncation) */}
+                          <div className="flex items-start justify-between gap-3 min-w-0 w-full">
+                            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                              {/* Product Image */}
+                              <div className="relative w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] max-w-[3.5rem] max-h-[3.5rem] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
+                                <img
+                                  src={p.images ? p.images[0] : p.image}
+                                  alt={p.title}
+                                  className={`w-full h-full object-cover ${
+                                    isHidden ? 'opacity-50 grayscale-[50%]' : isOut ? 'grayscale opacity-70' : ''
+                                  }`}
+                                  loading="lazy"
+                                />
+                                {isHidden && (
+                                  <span 
+                                    className="absolute top-1 right-1 bg-amber-500 text-white p-0.5 rounded-full shadow"
+                                    title="Article masqué aux clients"
+                                  >
                                     <EyeOff className="w-2.5 h-2.5" />
-                                    Masqué
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-900 whitespace-nowrap">
-                                    <Eye className="w-2.5 h-2.5" />
-                                    En ligne
-                                  </span>
-                                )}
-
-                                {isOut ? (
-                                  <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900 whitespace-nowrap">
-                                    Rupture
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-bold bg-slate-200/80 text-slate-700 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md whitespace-nowrap">
-                                    Stock : {p.stockQuantity ?? 10}
-                                  </span>
-                                )}
-
-                                {imgCount > 1 && (
-                                  <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold hidden sm:inline">
-                                    🖼️ {imgCount} photos
-                                  </span>
-                                )}
-
-                                {p.sizes && p.sizes.length > 0 && (
-                                  <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-900 whitespace-nowrap">
-                                    👟 {p.sizes.length} taille{p.sizes.length > 1 ? 's' : ''}
-                                  </span>
-                                )}
-
-                                {p.colors && p.colors.length > 0 && (
-                                  <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-900 inline-flex items-center gap-1.5 whitespace-nowrap">
-                                    <span>🎨</span>
-                                    <span className="inline-flex items-center gap-0.5">
-                                      {p.colors.slice(0, 4).map((c) => {
-                                        const cStyle = getColorStyle(c);
-                                        return (
-                                          <span
-                                            key={c}
-                                            className={`w-2 h-2 rounded-full inline-block ${cStyle.isLight ? 'border border-slate-400' : ''}`}
-                                            style={{ background: cStyle.background }}
-                                            title={c}
-                                          />
-                                        );
-                                      })}
-                                    </span>
-                                    <span>{p.colors.length} couleur{p.colors.length > 1 ? 's' : ''}</span>
                                   </span>
                                 )}
                               </div>
+
+                              {/* Title, Price & Badges */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                  <h4 className="text-sm font-bold text-slate-900 dark:text-white" title={p.title}>
+                                    {p.title}
+                                  </h4>
+                                  <span className="text-sm font-extrabold text-brand-orange whitespace-nowrap">
+                                    {formatPrice(p.price)}
+                                  </span>
+                                  {p.oldPrice && (
+                                    <span className="text-xs text-slate-400 line-through whitespace-nowrap">
+                                      {formatPrice(p.oldPrice)}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Badges in a clean horizontal flex-wrap line */}
+                                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                  <span className="text-[10px] text-slate-600 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-700/80 px-2 py-0.5 rounded-md font-semibold">
+                                    {p.category}
+                                  </span>
+
+                                  {isCurrentSpecialOffer && (
+                                    <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-xs whitespace-nowrap">
+                                      <Zap className="w-2.5 h-2.5 fill-white" />
+                                      ⭐ Offre Spéciale
+                                    </span>
+                                  )}
+
+                                  {isHidden ? (
+                                    <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-amber-200 dark:border-amber-900 whitespace-nowrap">
+                                      <EyeOff className="w-2.5 h-2.5" />
+                                      Masqué
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-900 whitespace-nowrap">
+                                      <Eye className="w-2.5 h-2.5" />
+                                      En ligne
+                                    </span>
+                                  )}
+
+                                  {isOut ? (
+                                    <span className="text-[10px] font-extrabold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900 whitespace-nowrap">
+                                      Rupture
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold bg-slate-200/80 text-slate-700 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                      Stock : {p.stockQuantity ?? 10}
+                                    </span>
+                                  )}
+
+                                  {imgCount > 1 && (
+                                    <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold">
+                                      🖼️ {imgCount} photos
+                                    </span>
+                                  )}
+
+                                  {p.sizes && p.sizes.length > 0 && (
+                                    <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-900 whitespace-nowrap">
+                                      👟 {p.sizes.length} taille{p.sizes.length > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+
+                                  {p.colors && p.colors.length > 0 && (
+                                    <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-900 inline-flex items-center gap-1.5 whitespace-nowrap">
+                                      <span>🎨</span>
+                                      <span className="inline-flex items-center gap-0.5">
+                                        {p.colors.slice(0, 4).map((c) => {
+                                          const cStyle = getColorStyle(c);
+                                          return (
+                                            <span
+                                              key={c}
+                                              className={`w-2 h-2 rounded-full inline-block ${cStyle.isLight ? 'border border-slate-400' : ''}`}
+                                              style={{ background: cStyle.background }}
+                                              title={c}
+                                            />
+                                          );
+                                        })}
+                                      </span>
+                                      <span>{p.colors.length} couleur{p.colors.length > 1 ? 's' : ''}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
+
+                            {/* Top Right Quick Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Supprimer définitivement "${p.title}" du catalogue ?\n\nAstuce : Si vous souhaitez simplement ne plus l'afficher aux clients pour l'instant, utilisez plutôt le bouton 'Masquer'.`)) {
+                                  onDeleteProduct(p.id);
+                                }
+                              }}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors active:scale-95 shrink-0"
+                              title="Supprimer définitivement du catalogue"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
 
-                          {/* Actions: Full-width toolbar on smartphone, inline on desktop */}
-                          <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto flex-wrap">
+                          {/* Row 2: Action Toolbar (Dedicated Row, Perfectly Spaced) */}
+                          <div className="flex items-center gap-2 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/60 flex-wrap justify-end sm:justify-start">
                             {/* Copy Campaign Ad Link / Landing Page Button */}
                             <button
                               type="button"
@@ -2450,7 +2473,7 @@ export default function AdminModal({
                                   });
                                 }
                               }}
-                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 border ${
+                              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 border ${
                                 copiedProductId === p.id
                                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
                                   : 'bg-white hover:bg-orange-50 hover:text-brand-orange hover:border-orange-300 text-slate-700 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-orange-950/30'
@@ -2474,7 +2497,7 @@ export default function AdminModal({
                             <button
                               type="button"
                               onClick={() => handleStartEditProduct(p)}
-                              className="flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 bg-white hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-sky-950/40 dark:hover:text-sky-300"
+                              className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 bg-white hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-sky-950/40 dark:hover:text-sky-300"
                               title="Modifier toutes les informations de l'article"
                             >
                               <Pencil className="w-3.5 h-3.5 text-sky-600" />
@@ -2485,7 +2508,7 @@ export default function AdminModal({
                             <button
                               type="button"
                               onClick={() => handleSetProductAsSpecialOfferFromManage(p)}
-                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 border ${
+                              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 border ${
                                 isCurrentSpecialOffer
                                   ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800'
                                   : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-amber-950/30'
@@ -2500,7 +2523,7 @@ export default function AdminModal({
                             <button
                               type="button"
                               onClick={() => onToggleProductVisibility && onToggleProductVisibility(p.id)}
-                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ${
+                              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 ${
                                 isHidden
                                   ? 'bg-amber-500 hover:bg-amber-600 text-white'
                                   : 'bg-white hover:bg-amber-50 hover:text-amber-800 text-slate-700 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
@@ -2524,7 +2547,7 @@ export default function AdminModal({
                             <button
                               type="button"
                               onClick={() => onToggleProductStock && onToggleProductStock(p.id)}
-                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 active:scale-95 border ${
+                              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 border ${
                                 isOut
                                   ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                                   : 'bg-white text-slate-700 hover:bg-red-50 hover:text-red-700 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
@@ -2532,20 +2555,6 @@ export default function AdminModal({
                               title={isOut ? "Marquer comme En Stock (10 unités)" : "Marquer comme Rupture de Stock"}
                             >
                               <span>{isOut ? '+ En Stock' : 'Rupture'}</span>
-                            </button>
-
-                            {/* Permanent Delete Button */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm(`Supprimer définitivement "${p.title}" du catalogue ?\n\nAstuce : Si vous souhaitez simplement ne plus l'afficher aux clients pour l'instant, utilisez plutôt le bouton 'Masquer'.`)) {
-                                  onDeleteProduct(p.id);
-                                }
-                              }}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors active:scale-95"
-                              title="Supprimer définitivement du catalogue"
-                            >
-                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
