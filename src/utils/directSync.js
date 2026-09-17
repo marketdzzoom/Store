@@ -9,6 +9,7 @@
  */
 
 import { saveProducts, saveSpecialOffer, getStoredProducts, getStoredSpecialOffer } from './storage.js';
+import { INITIAL_PRODUCTS } from '../data/initialProducts.js';
 
 /**
  * Encodes catalog state into a compact, URL-safe base64 string
@@ -25,17 +26,24 @@ export function encodeCatalogState(products, specialOffer) {
 
     const customPrices = {};
     (products || []).forEach((p) => {
-      if (p.price) {
+      const std = INITIAL_PRODUCTS.find((sp) => sp.id === p.id);
+      if (!std || (p.price && p.price !== std.price) || (p.oldPrice && p.oldPrice !== std.oldPrice)) {
         customPrices[p.id] = { price: p.price, oldPrice: p.oldPrice };
       }
     });
 
+    // Only include custom added products that are not standard prod-1..prod-9
+    const customNewProducts = (products || []).filter((p) => {
+      const isStandard = ['prod-1','prod-2','prod-3','prod-4','prod-5','prod-6','prod-7','prod-8','prod-9'].includes(p.id);
+      return !isStandard;
+    });
+
     const payload = {
-      v: 2,
+      v: 3,
       ts: Date.now(),
-      hidden: hiddenIds,
-      out: outOfStockIds,
-      prices: customPrices,
+      h: hiddenIds,
+      o: outOfStockIds,
+      p: customPrices,
       so: specialOffer ? {
         enabled: specialOffer.enabled,
         tagline: specialOffer.tagline,
@@ -44,26 +52,7 @@ export function encodeCatalogState(products, specialOffer) {
         oldPrice: specialOffer.oldPrice,
         description: specialOffer.description
       } : null,
-      // Full products if count is reasonable
-      full: (products || []).map((p) => ({
-        id: p.id,
-        title: p.title,
-        titleAr: p.titleAr,
-        price: p.price,
-        oldPrice: p.oldPrice,
-        category: p.category,
-        badge: p.badge,
-        inStock: p.inStock !== false,
-        stockQuantity: p.stockQuantity ?? 10,
-        isVisible: p.isVisible !== false,
-        description: p.description,
-        descriptionAr: p.descriptionAr,
-        image: p.image,
-        images: p.images || [],
-        sizes: p.sizes || [],
-        colors: p.colors || [],
-        colorImageMap: p.colorImageMap || {}
-      }))
+      custom: customNewProducts
     };
 
     const jsonStr = JSON.stringify(payload);
@@ -115,30 +104,37 @@ export function applyCatalogState(payload, currentProducts, currentSpecialOffer)
 
   let updatedProducts = [...(currentProducts || [])];
 
-  // 1. If full products array is available, use it directly
-  if (Array.isArray(payload.full) && payload.full.length > 0) {
+  // 1. If custom products are present, merge them
+  if (Array.isArray(payload.custom) && payload.custom.length > 0) {
+    const existingIds = new Set(updatedProducts.map((p) => p.id));
+    const toAdd = payload.custom.filter((p) => !existingIds.has(p.id));
+    updatedProducts = [...toAdd, ...updatedProducts];
+  } else if (Array.isArray(payload.full) && payload.full.length > 0) {
     updatedProducts = payload.full;
-  } else {
-    // Otherwise apply delta overrides (hidden, out of stock, prices)
-    const hiddenSet = new Set(payload.hidden || []);
-    const outSet = new Set(payload.out || []);
-    const prices = payload.prices || {};
-
-    updatedProducts = updatedProducts.map((p) => {
-      const isHidden = hiddenSet.has(p.id);
-      const isOut = outSet.has(p.id);
-      const priceData = prices[p.id];
-
-      return {
-        ...p,
-        isVisible: !isHidden,
-        inStock: !isOut,
-        badge: isOut ? 'Rupture de Stock' : p.badge,
-        price: priceData?.price !== undefined ? priceData.price : p.price,
-        oldPrice: priceData?.oldPrice !== undefined ? priceData.oldPrice : p.oldPrice
-      };
-    });
   }
+
+  // 2. Apply delta overrides (hidden, out of stock, prices)
+  const hiddenList = payload.h || payload.hidden || [];
+  const outList = payload.o || payload.out || [];
+  const prices = payload.p || payload.prices || {};
+
+  const hiddenSet = new Set(hiddenList);
+  const outSet = new Set(outList);
+
+  updatedProducts = updatedProducts.map((p) => {
+    const isHidden = hiddenSet.has(p.id);
+    const isOut = outSet.has(p.id);
+    const priceData = prices[p.id];
+
+    return {
+      ...p,
+      isVisible: !isHidden,
+      inStock: !isOut,
+      badge: isOut ? 'Rupture de Stock' : (p.badge === 'Rupture de Stock' ? 'Nouveau' : p.badge),
+      price: priceData?.price !== undefined ? priceData.price : p.price,
+      oldPrice: priceData?.oldPrice !== undefined ? priceData.oldPrice : p.oldPrice
+    };
+  });
 
   // 2. Apply Special Offer if provided
   let updatedOffer = currentSpecialOffer;
@@ -173,6 +169,9 @@ export function generateDirectSyncLink(products, specialOffer) {
   const currentUrl = new URL(window.location.href);
   currentUrl.searchParams.delete('sync_db');
   currentUrl.searchParams.delete('sync_auth');
+  currentUrl.searchParams.delete('p');
+  currentUrl.searchParams.delete('produit');
+  currentUrl.searchParams.delete('product');
   currentUrl.searchParams.set('sync_state', encoded);
 
   const finalUrl = currentUrl.toString();

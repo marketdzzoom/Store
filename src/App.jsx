@@ -295,14 +295,21 @@ export default function App() {
     const handleUrlProduct = () => {
       try {
         const params = new URLSearchParams(window.location.search);
-        const pId = params.get('p') || params.get('produit') || params.get('product') || (window.location.hash.startsWith('#prod-') ? window.location.hash.slice(1) : null);
-        if (pId && products && products.length > 0) {
-          const cleanId = pId.trim();
+        let rawId = params.get('p') || params.get('produit') || params.get('product');
+        if (!rawId && window.location.hash) {
+          const hashClean = window.location.hash.replace(/^#\/?/, '').trim();
+          if (hashClean.startsWith('prod-') || !isNaN(hashClean)) {
+            rawId = hashClean;
+          }
+        }
+
+        if (rawId && products && products.length > 0) {
+          const cleanId = decodeURIComponent(rawId).trim().replace(/\/+$/, '');
           const target = products.find((p) => p.id === cleanId || p.id === `prod-${cleanId}`);
           if (target) {
             setQuickViewProduct(target);
           }
-        } else if (!pId) {
+        } else if (!rawId) {
           setQuickViewProduct(null);
         }
       } catch (e) {

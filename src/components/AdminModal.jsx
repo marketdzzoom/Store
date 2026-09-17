@@ -2606,6 +2606,12 @@ export default function AdminModal({
                     {directSyncInfo.qrUrl ? (
                       <img
                         src={directSyncInfo.qrUrl}
+                        onError={(e) => {
+                          if (!e.currentTarget.dataset.fallback) {
+                            e.currentTarget.dataset.fallback = 'true';
+                            e.currentTarget.src = `https://quickchart.io/qr?size=300&text=${encodeURIComponent(directSyncInfo.url)}`;
+                          }
+                        }}
                         alt="QR Code Synchronisation Smartphone"
                         className="w-48 h-48 sm:w-52 sm:h-52 rounded-xl shadow-md border-2 border-slate-200 dark:border-slate-700 bg-white p-2"
                         loading="lazy"

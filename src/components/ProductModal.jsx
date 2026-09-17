@@ -194,9 +194,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   return (
     <>
       {/* Main Product Quick View Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-brand-navy/70 backdrop-blur-sm animate-fadeIn">
         <div 
-          className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[92vh] md:h-[660px] shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-hidden"
+          className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-4xl w-full max-h-[95vh] md:h-[660px] shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Control Bar (Share Link for Ads / WhatsApp & Close) */}
