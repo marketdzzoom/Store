@@ -251,12 +251,84 @@ export default function App() {
     });
   };
 
+  // Open Product Landing Page & Sync URL with ?p=productId
+  const handleOpenProduct = (product) => {
+    if (!product) return;
+    setQuickViewProduct(product);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('p', product.id);
+      window.history.pushState({ productId: product.id }, '', url.toString());
+    } catch (e) {
+      // Ignore in non-browser environments
+    }
+  };
+
+  // Close Product Landing Page & Restore Clean URL
+  const handleCloseProduct = () => {
+    setQuickViewProduct(null);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('p');
+      url.searchParams.delete('produit');
+      url.searchParams.delete('product');
+      if (url.hash.startsWith('#prod-')) {
+        url.hash = '';
+      }
+      const newQuery = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
+      window.history.pushState(null, '', url.pathname + newQuery + url.hash);
+    } catch (e) {
+      // Ignore
+    }
+  };
+
+  // Direct Express Buy Now: adds to cart, closes product modal, and opens checkout drawer
   const handleBuyNow = (product, quantity = 1, options = {}) => {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
     handleAddToCart(product, quantity, options);
-    setQuickViewProduct(null);
+    handleCloseProduct();
     setIsCartOpen(true);
   };
+
+  // Marketing Deep-Linking: auto-open product from URL parameter (?p=prod-1, ?produit=prod-1, or #prod-1)
+  useEffect(() => {
+    const handleUrlProduct = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const pId = params.get('p') || params.get('produit') || params.get('product') || (window.location.hash.startsWith('#prod-') ? window.location.hash.slice(1) : null);
+        if (pId && products && products.length > 0) {
+          const cleanId = pId.trim();
+          const target = products.find((p) => p.id === cleanId || p.id === `prod-${cleanId}`);
+          if (target) {
+            setQuickViewProduct(target);
+          }
+        } else if (!pId) {
+          setQuickViewProduct(null);
+        }
+      } catch (e) {
+        // Ignore
+      }
+    };
+
+    handleUrlProduct();
+    window.addEventListener('popstate', handleUrlProduct);
+    window.addEventListener('hashchange', handleUrlProduct);
+    return () => {
+      window.removeEventListener('popstate', handleUrlProduct);
+      window.removeEventListener('hashchange', handleUrlProduct);
+    };
+  }, [products]);
+
+  // Dynamic Document Title for Marketing Landing Pages & Social Sharing
+  useEffect(() => {
+    if (quickViewProduct) {
+      const prodTitle = (lang === 'ar' && quickViewProduct.titleAr) ? quickViewProduct.titleAr : quickViewProduct.title;
+      const formatted = quickViewProduct.price ? `${quickViewProduct.price.toLocaleString('fr-DZ')} DA` : '';
+      document.title = `${prodTitle} (${formatted}) | Zoom Market Dz 🇩🇿`;
+    } else {
+      document.title = 'Zoom Market Dz | Boutique en Ligne en Algérie 🇩🇿';
+    }
+  }, [quickViewProduct, lang]);
 
   const handleOpenCart = () => {
     setIsCartOpen(true);
@@ -443,7 +515,7 @@ export default function App() {
           <SpecialOfferBanner
             offer={specialOffer}
             products={products}
-            onQuickView={setQuickViewProduct}
+            onQuickView={handleOpenProduct}
             onBuyNow={handleBuyNow}
             lang={lang}
           />
@@ -489,7 +561,7 @@ export default function App() {
                   product={product}
                   onAddToCart={handleAddToCart}
                   onBuyNow={handleBuyNow}
-                  onQuickView={setQuickViewProduct}
+                  onQuickView={handleOpenProduct}
                   lang={lang}
                 />
               ))}
@@ -535,10 +607,10 @@ export default function App() {
         lang={lang}
       />
 
-      {/* Product Quick View Modal */}
+      {/* Product Quick View / Marketing Landing Page Modal */}
       <ProductModal
         product={quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
+        onClose={handleCloseProduct}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
         lang={lang}

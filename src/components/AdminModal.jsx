@@ -43,7 +43,7 @@ import {
   Share2
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
-import { formatPrice } from '../utils/formatters';
+import { formatPrice, getProductMarketingLink } from '../utils/formatters';
 import { 
   getStoredSpecialOffer, 
   saveSpecialOffer, 
@@ -109,6 +109,7 @@ export default function AdminModal({
   const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'add', 'special_offer', 'manage'
   const [editingProduct, setEditingProduct] = useState(null);
   const [prodFilter, setProdFilter] = useState('all'); // 'all', 'visible', 'hidden', 'outofstock'
+  const [copiedProductId, setCopiedProductId] = useState(null);
   
   // Orders Management State
   const [orders, setOrders] = useState([]);
@@ -2436,7 +2437,39 @@ export default function AdminModal({
                           </div>
 
                           {/* Actions: Full-width toolbar on smartphone, inline on desktop */}
-                          <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto flex-wrap">
+                            {/* Copy Campaign Ad Link / Landing Page Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const link = getProductMarketingLink(p.id);
+                                if (navigator?.clipboard?.writeText) {
+                                  navigator.clipboard.writeText(link).then(() => {
+                                    setCopiedProductId(p.id);
+                                    setTimeout(() => setCopiedProductId(null), 2500);
+                                  });
+                                }
+                              }}
+                              className={`flex-1 sm:flex-initial py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 border ${
+                                copiedProductId === p.id
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                                  : 'bg-white hover:bg-orange-50 hover:text-brand-orange hover:border-orange-300 text-slate-700 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-orange-950/30'
+                              }`}
+                              title="Copier le lien publicitaire direct (Landing Page) pour vos campagnes Facebook / TikTok / Instagram Ads"
+                            >
+                              {copiedProductId === p.id ? (
+                                <>
+                                  <CheckCheck className="w-3.5 h-3.5 text-white shrink-0" />
+                                  <span>Lien copié !</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Share2 className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                                  <span>Lien Pub</span>
+                                </>
+                              )}
+                            </button>
+
                             {/* Edit Button */}
                             <button
                               type="button"

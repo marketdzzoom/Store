@@ -90,3 +90,19 @@ export function formatPhoneForWhatsApp(phone) {
   }
   return clean;
 }
+
+/**
+ * Builds a direct, marketing-ready product landing page link
+ * Formatted for Facebook Ads, TikTok Ads, Instagram, and WhatsApp
+ */
+export function getProductMarketingLink(productId) {
+  if (typeof window === 'undefined' || !productId) return '';
+  try {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+    return `${origin}${pathname}?p=${encodeURIComponent(productId)}`;
+  } catch (e) {
+    return `?p=${encodeURIComponent(productId)}`;
+  }
+}
+

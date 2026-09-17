@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Eye, Star, Check, AlertTriangle } from 'lucide-react';
-import { formatPrice } from '../utils/formatters';
+import { ShoppingBag, Plus, Eye, Star, Check, AlertTriangle, Share2 } from 'lucide-react';
+import { formatPrice, getProductMarketingLink } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle, getImageIndexForColor } from '../utils/colors';
 
@@ -8,6 +8,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
   const [added, setAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
@@ -37,6 +38,17 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
       onBuyNow(product, 1);
     } else {
       onAddToCart(product);
+    }
+  };
+
+  const handleCopyLink = (e) => {
+    e.stopPropagation();
+    const link = getProductMarketingLink(product.id);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      });
     }
   };
 
@@ -78,6 +90,26 @@ export default function ProductCard({ product, onAddToCart, onBuyNow, onQuickVie
               -{discountPercent}%
             </span>
           )}
+        </div>
+
+        {/* Top Right Quick Share Campaign Link */}
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            title={copiedLink ? (lang === 'ar' ? 'تم نسخ الرابط!' : 'Lien copié !') : (lang === 'ar' ? 'نسخ رابط الإعلان' : 'Copier le lien publicitaire')}
+            className={`p-2 rounded-full shadow-md backdrop-blur-sm transition-all transform hover:scale-110 active:scale-95 border flex items-center gap-1 ${
+              copiedLink
+                ? 'bg-emerald-600 text-white border-emerald-500 scale-105'
+                : 'bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-brand-orange hover:bg-white dark:hover:bg-slate-800 border-slate-200/60 dark:border-slate-700/60'
+            }`}
+          >
+            {copiedLink ? (
+              <Check className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Share2 className="w-3.5 h-3.5" />
+            )}
+          </button>
         </div>
 
         {/* Product Image Box */}

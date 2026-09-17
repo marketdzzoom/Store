@@ -14,9 +14,13 @@ import {
   Maximize2,
   RotateCcw,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  CheckCheck,
+  Zap,
+  Link
 } from 'lucide-react';
-import { formatPrice } from '../utils/formatters';
+import { formatPrice, getProductMarketingLink } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
@@ -30,6 +34,19 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [variantError, setVariantError] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyProductLink = (e) => {
+    e?.stopPropagation?.();
+    if (!product) return;
+    const link = getProductMarketingLink(product.id);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 3000);
+      }).catch(() => {});
+    }
+  };
 
   // HD Interactive Zoom States
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
@@ -182,14 +199,31 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
           className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[92vh] md:h-[660px] shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-30 bg-slate-100/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-2 rounded-full transition-colors shadow-md backdrop-blur-xs"
-            aria-label="Fermer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Top Control Bar (Share Link for Ads / WhatsApp & Close) */}
+          <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyProductLink}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-md backdrop-blur-md border ${
+                copiedLink
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30'
+                  : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:text-brand-orange dark:hover:text-brand-orange border-slate-200/80 dark:border-slate-700'
+              }`}
+              title="Copier le lien direct de cette page pour vos publicités ou WhatsApp"
+            >
+              {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-white" /> : <Share2 className="w-3.5 h-3.5 text-brand-orange" />}
+              <span className="hidden sm:inline">{copiedLink ? '✓ Lien copié !' : 'Partager / Lien Pub'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-white/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-2 rounded-full transition-colors shadow-md backdrop-blur-md border border-slate-200/80 dark:border-slate-700"
+              aria-label="Fermer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Left Image Section & Interactive Zoom Container (Fixed & balanced, zero empty void) */}
           <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-5 sm:p-6 flex flex-col justify-between relative md:h-full shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
@@ -498,33 +532,41 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
             </div>
 
             {/* Sticky Action CTAs Footer - Always visible without scrolling */}
-            <div className="sticky bottom-0 z-30 p-4 sm:p-5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex flex-col sm:flex-row gap-2.5 shrink-0">
-              <button
-                onClick={handleAdd}
-                disabled={isOutOfStock}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 ${
-                  isOutOfStock
-                    ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
-                    : added
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4 text-brand-orange" />
-                <span>{isOutOfStock ? t.indisponible : added ? t.added : t.addToCart}</span>
-              </button>
+            <div className="sticky bottom-0 z-30 p-3 sm:p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex flex-col gap-2 shrink-0">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  onClick={handleAdd}
+                  disabled={isOutOfStock}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 ${
+                    isOutOfStock
+                      ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
+                      : added
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4 text-brand-orange shrink-0" />
+                  <span>{isOutOfStock ? t.indisponible : added ? t.added : t.addToCart}</span>
+                </button>
 
-              <button
-                onClick={handleBuy}
-                disabled={isOutOfStock}
-                className={`flex-1 py-3 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 ${
-                  isOutOfStock
-                    ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
-                    : 'bg-brand-orange hover:bg-brand-orange-hover text-white shadow-brand-orange/30 hover:shadow-glow'
-                }`}
-              >
-                {t.buyNow}
-              </button>
+                <button
+                  onClick={handleBuy}
+                  disabled={isOutOfStock}
+                  className={`flex-1 py-3 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white ${
+                    isOutOfStock
+                      ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
+                      : 'bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 hover:shadow-glow ring-2 ring-brand-orange/20'
+                  }`}
+                >
+                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-pulse" />
+                  <span>{t.buyNow || 'Acheter maintenant'}</span>
+                </button>
+              </div>
+
+              {/* Express Algerian COD reassurance badge */}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium text-center">
+                <span>{lang === 'ar' ? '🇩🇿 الدفع عند الاستلام (69 ولاية) • عاين سلعتك براحتك قبل الدفع' : '🇩🇿 Paiement à la livraison (69 Wilayas) • Vérifiez votre colis avant de payer'}</span>
+              </div>
             </div>
           </div>
         </div>
