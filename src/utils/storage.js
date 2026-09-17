@@ -1,9 +1,16 @@
-import { INITIAL_PRODUCTS } from '../data/initialProducts';
+import { INITIAL_PRODUCTS } from '../data/initialProducts.js';
+import { 
+  pushProductsToCloud, 
+  pushSpecialOfferToCloud, 
+  pushOrdersToCloud 
+} from './cloudSync.js';
 
 const PRODUCTS_KEY = 'zoom_market_products_v1';
 const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
+const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
+const CURRENT_CATALOG_VERSION = '2026.09.18-freshness-v2';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -79,10 +86,14 @@ export function getStoredProducts() {
   return INITIAL_PRODUCTS;
 }
 
-// Save products list to localStorage
-export function saveProducts(products) {
+// Save products list to localStorage and push to Cloud
+export function saveProducts(products, syncCloud = true) {
   try {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    localStorage.setItem(CATALOG_BUILD_VERSION_KEY, CURRENT_CATALOG_VERSION);
+    if (syncCloud) {
+      pushProductsToCloud(products);
+    }
   } catch (e) {
     console.error('Error saving products to localStorage:', e);
   }
@@ -90,7 +101,7 @@ export function saveProducts(products) {
 
 // Reset products to default initial dataset
 export function resetStoredProducts() {
-  saveProducts(INITIAL_PRODUCTS);
+  saveProducts(INITIAL_PRODUCTS, true);
   return INITIAL_PRODUCTS;
 }
 
@@ -104,13 +115,16 @@ export function getStoredSpecialOffer() {
   } catch (e) {
     console.error('Error reading special offer:', e);
   }
-  saveSpecialOffer(DEFAULT_SPECIAL_OFFER);
+  saveSpecialOffer(DEFAULT_SPECIAL_OFFER, false);
   return DEFAULT_SPECIAL_OFFER;
 }
 
-export function saveSpecialOffer(offer) {
+export function saveSpecialOffer(offer, syncCloud = true) {
   try {
     localStorage.setItem(SPECIAL_OFFER_KEY, JSON.stringify(offer));
+    if (syncCloud) {
+      pushSpecialOfferToCloud(offer);
+    }
   } catch (e) {
     console.error('Error saving special offer:', e);
   }
@@ -130,9 +144,12 @@ export function getStoredOrders() {
   return [];
 }
 
-export function saveOrders(orders) {
+export function saveOrders(orders, syncCloud = true) {
   try {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    if (syncCloud) {
+      pushOrdersToCloud(orders);
+    }
   } catch (e) {
     console.error('Error saving orders to localStorage:', e);
   }

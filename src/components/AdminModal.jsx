@@ -27,7 +27,16 @@ import {
   Search,
   Star,
   Wand2,
-  FileText
+  FileText,
+  Cloud,
+  CloudLightning,
+  Link2,
+  Copy,
+  CheckCheck,
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck,
+  Radio
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -38,6 +47,14 @@ import {
   updateOrderStatus, 
   deleteOrderFromStorage 
 } from '../utils/storage';
+import {
+  getCloudConfig,
+  saveCloudConfig,
+  testFirebaseConnection,
+  pushFullStoreToCloud,
+  generateSmartphoneSyncLink,
+  normalizeFirebaseUrl
+} from '../utils/cloudSync';
 import { PRESET_COLORS, getColorStyle } from '../utils/colors';
 import { 
   formatRawDescriptionToStructured, 
@@ -77,7 +94,8 @@ export default function AdminModal({
   onClearAllProducts,
   onResetProducts,
   specialOffer,
-  onUpdateSpecialOffer
+  onUpdateSpecialOffer,
+  cloudSyncStatus = 'idle'
 }) {
   const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'add', 'special_offer', 'manage'
   const [editingProduct, setEditingProduct] = useState(null);
@@ -153,6 +171,113 @@ export default function AdminModal({
   const [showDescPreviewFr, setShowDescPreviewFr] = useState(false);
   const [showDescPreviewAr, setShowDescPreviewAr] = useState(false);
   const [showSoDescPreviewFr, setShowSoDescPreviewFr] = useState(false);
+
+  // Cloud Synchronization State
+  const [cloudConfig, setCloudConfig] = useState(getCloudConfig);
+  const [cloudUrlInput, setCloudUrlInput] = useState(() => getCloudConfig().firebaseUrl || '');
+  const [cloudAuthInput, setCloudAuthInput] = useState(() => getCloudConfig().authSecret || '');
+  const [isTestingCloud, setIsTestingCloud] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [isPushingStore, setIsPushingStore] = useState(false);
+  const [pushResult, setPushResult] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedConfigSnippet, setCopiedConfigSnippet] = useState(false);
+
+  // Refresh cloud config state whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      const cfg = getCloudConfig();
+      setCloudConfig(cfg);
+      setCloudUrlInput(cfg.firebaseUrl || '');
+      setCloudAuthInput(cfg.authSecret || '');
+      setTestResult(null);
+      setPushResult(null);
+    }
+  }, [isOpen]);
+
+  // Real-time listen for cloud-synced orders to refresh orders tab dynamically
+  useEffect(() => {
+    const handleCloudOrders = (e) => {
+      if (Array.isArray(e.detail)) {
+        setOrders(e.detail);
+      }
+    };
+    window.addEventListener('zoom_market_cloud_orders_synced', handleCloudOrders);
+    return () => window.removeEventListener('zoom_market_cloud_orders_synced', handleCloudOrders);
+  }, []);
+
+  const handleTestConnection = async () => {
+    if (!cloudUrlInput.trim()) {
+      setTestResult({ success: false, error: 'Veuillez saisir l\'URL de votre base Firebase Realtime Database.' });
+      return;
+    }
+    setIsTestingCloud(true);
+    setTestResult(null);
+    try {
+      const res = await testFirebaseConnection(cloudUrlInput, cloudAuthInput);
+      setTestResult(res);
+    } catch (err) {
+      setTestResult({ success: false, error: err.message || 'Erreur inattendue de connexion' });
+    } finally {
+      setIsTestingCloud(false);
+    }
+  };
+
+  const handleSaveCloudSettings = () => {
+    const cleanUrl = normalizeFirebaseUrl(cloudUrlInput);
+    if (!cleanUrl) {
+      setTestResult({ success: false, error: 'Veuillez saisir une URL Firebase valide (ex: https://mon-projet-default-rtdb.firebaseio.com).' });
+      return;
+    }
+    const updated = saveCloudConfig({
+      firebaseUrl: cleanUrl,
+      authSecret: cloudAuthInput.trim(),
+      enabled: true
+    });
+    setCloudConfig(updated);
+    setTestResult({ success: true, message: 'Configuration sauvegardée ! La synchronisation en temps réel est active.' });
+  };
+
+  const handlePushFullStore = async () => {
+    setIsPushingStore(true);
+    setPushResult(null);
+    try {
+      const ok = await pushFullStoreToCloud({ products, specialOffer, orders });
+      if (ok) {
+        setPushResult({
+          success: true,
+          message: `Synchronisation réussie ! Vos ${products.length} produits, l'offre spéciale et vos commandes sont maintenant publiés dans le Cloud. Vos smartphones affichent désormais exactement ce catalogue.`
+        });
+      } else {
+        setPushResult({
+          success: false,
+          error: 'Échec de la synchronisation. Vérifiez l\'URL Firebase et que vos Règles (Rules) sont configurées sur ".read": true, ".write": true.'
+        });
+      }
+    } catch (err) {
+      setPushResult({ success: false, error: err.message || 'Erreur lors de la synchronisation' });
+    } finally {
+      setIsPushingStore(false);
+    }
+  };
+
+  const handleCopySmartphoneLink = () => {
+    const link = generateSmartphoneSyncLink();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }).catch(() => {});
+  };
+
+  const handleCopyConfigSnippet = () => {
+    const cleanUrl = normalizeFirebaseUrl(cloudUrlInput);
+    const snippet = `VITE_FIREBASE_DATABASE_URL=${cleanUrl}`;
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopiedConfigSnippet(true);
+      setTimeout(() => setCopiedConfigSnippet(false), 3000);
+    }).catch(() => {});
+  };
 
   const handleFormatDescriptionFr = () => {
     if (!description.trim()) return;
@@ -689,6 +814,33 @@ export default function AdminModal({
           >
             <Package className="w-4 h-4" />
             Boutique ({products.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('cloud')}
+            className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'cloud'
+                ? 'border-sky-500 text-sky-500 bg-white dark:bg-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Cloud className="w-4 h-4 text-sky-500" />
+            <span>Synchro Cloud (PC & Mobile)</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 ${
+              cloudSyncStatus === 'connected'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                : cloudSyncStatus === 'connecting' || cloudSyncStatus === 'reconnecting'
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 animate-pulse'
+                : cloudSyncStatus === 'error'
+                ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400'
+                : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                cloudSyncStatus === 'connected' ? 'bg-emerald-500 animate-ping' : cloudSyncStatus === 'error' ? 'bg-red-500' : 'bg-slate-400'
+              }`}></span>
+              {cloudSyncStatus === 'connected' ? 'En ligne' : cloudSyncStatus === 'reconnecting' ? 'Reconnexion...' : cloudSyncStatus === 'connecting' ? 'Connexion...' : cloudSyncStatus === 'error' ? 'Erreur' : 'Non lié'}
+            </span>
           </button>
         </div>
 
@@ -1967,6 +2119,45 @@ export default function AdminModal({
 
             return (
               <div className="space-y-4">
+                {/* Cloud Sync Status Notification Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl text-xs">
+                  <div className="flex items-center gap-2">
+                    <CloudLightning className="w-4 h-4 text-sky-500 shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-200 font-medium">
+                      {cloudSyncStatus === 'connected' ? (
+                        <>
+                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">● Synchro Cloud Active :</strong> Vos actions (masquage/démasquage, prix, stocks) sont diffusées en direct vers vos smartphones.
+                        </>
+                      ) : (
+                        <>
+                          <strong className="text-amber-600 dark:text-amber-400 font-bold">⚠️ Mode Local :</strong> Pour synchroniser vos smartphones et visiteurs en temps réel, configurez la Synchro Cloud.
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {cloudSyncStatus === 'connected' && (
+                      <button
+                        type="button"
+                        onClick={handlePushFullStore}
+                        disabled={isPushingStore}
+                        className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] transition-all flex items-center gap-1 active:scale-95"
+                        title="Forcer la synchronisation de tout le catalogue vers le Cloud"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isPushingStore ? 'animate-spin' : ''}`} />
+                        <span>Forcer Sync</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('cloud')}
+                      className="px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-[11px] transition-all"
+                    >
+                      Paramètres Cloud ☁️
+                    </button>
+                  </div>
+                </div>
+
                 {/* Header Stats & Global Actions */}
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -2309,6 +2500,250 @@ export default function AdminModal({
               </div>
             );
           })()}
+
+          {/* TAB 5: CLOUD REALTIME SYNCHRONIZATION (PC & SMARTPHONE) */}
+          {activeTab === 'cloud' && (
+            <div className="space-y-6 max-w-4xl mx-auto py-2">
+              
+              {/* Header Card with Realtime Status Badge */}
+              <div className="p-5 rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+                
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-white/10 text-sky-300 border border-white/10 backdrop-blur-md">
+                      <CloudLightning className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Synchronisation Multi-Appareils</span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                      <span>Cloud Temps Réel (PC ⇄ Smartphone)</span>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                      Résout définitivement le problème de cache et d'isolation des navigateurs. Tout ce que vous modifiez sur ordinateur (masquage de produit, prix, stocks) est synchronisé instantanément sur votre téléphone et pour tous vos clients sur GitHub Pages.
+                    </p>
+                  </div>
+
+                  {/* Status Indicator Widget */}
+                  <div className="shrink-0 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center sm:items-end justify-center gap-1.5 text-center sm:text-right">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">État de la connexion</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${
+                        cloudSyncStatus === 'connected' 
+                          ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50 animate-pulse' 
+                          : cloudSyncStatus === 'connecting' || cloudSyncStatus === 'reconnecting'
+                          ? 'bg-amber-400 shadow-lg shadow-amber-400/50 animate-pulse'
+                          : cloudSyncStatus === 'error'
+                          ? 'bg-red-400 shadow-lg shadow-red-400/50'
+                          : 'bg-slate-400'
+                      }`} />
+                      <span className="text-sm font-extrabold text-white">
+                        {cloudSyncStatus === 'connected' && '🟢 En Ligne & Synchronisé'}
+                        {cloudSyncStatus === 'connecting' && '🟡 Connexion en cours...'}
+                        {cloudSyncStatus === 'reconnecting' && '🟡 Reconnexion...'}
+                        {cloudSyncStatus === 'unconfigured' && '⚪ Non Connecté (Local)'}
+                        {cloudSyncStatus === 'error' && '🔴 Erreur de Connexion'}
+                      </span>
+                    </div>
+                    {cloudConfig.lastSyncTime && (
+                      <span className="text-[10px] text-slate-400">
+                        Dernier sync : {new Date(cloudConfig.lastSyncTime).toLocaleTimeString('fr-FR')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Feedback messages */}
+              {testResult && (
+                <div className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-3 border ${
+                  testResult.success
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
+                    : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
+                }`}>
+                  {testResult.success ? (
+                    <CheckCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-bold">{testResult.success ? 'Succès de connexion !' : 'Erreur de connexion'}</p>
+                    <p className="mt-0.5 leading-relaxed">{testResult.message || testResult.error}</p>
+                  </div>
+                </div>
+              )}
+
+              {pushResult && (
+                <div className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-3 border ${
+                  pushResult.success
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
+                    : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
+                }`}>
+                  {pushResult.success ? (
+                    <CheckCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-bold">{pushResult.success ? 'Catalogue synchronisé avec succès !' : 'Erreur de synchronisation'}</p>
+                    <p className="mt-0.5 leading-relaxed">{pushResult.message || pushResult.error}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Card: Firebase Credentials */}
+              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-base">
+                  <ShieldCheck className="w-5 h-5 text-sky-500" />
+                  <span>Configuration de la Base Firebase Realtime Database</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      URL de votre Realtime Database <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={cloudUrlInput}
+                      onChange={(e) => setCloudUrlInput(e.target.value)}
+                      placeholder="https://zoom-market-dz-default-rtdb.firebaseio.com"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    />
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                      L'URL fournie par Google Firebase se termine généralement par <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">firebaseio.com</code>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Clé Secrète de Base de Données / Auth Token <span className="text-slate-400 font-normal">(Optionnel)</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={cloudAuthInput}
+                      onChange={(e) => setCloudAuthInput(e.target.value)}
+                      placeholder="Laisser vide si vos règles sont configurées sur .read: true, .write: true"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Actions Buttons Grid */}
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleTestConnection}
+                      disabled={isTestingCloud || !cloudUrlInput.trim()}
+                      className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isTestingCloud ? 'animate-spin text-sky-500' : ''}`} />
+                      <span>{isTestingCloud ? 'Test en cours...' : 'Tester la connexion'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveCloudSettings}
+                      disabled={!cloudUrlInput.trim()}
+                      className="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-500/20 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Enregistrer les paramètres</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePushFullStore}
+                      disabled={isPushingStore || !cloudUrlInput.trim()}
+                      className="px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95 sm:ml-auto"
+                      title="Envoie instantanément tous les produits de cet ordinateur vers le Cloud pour synchroniser vos mobiles"
+                    >
+                      <CloudLightning className={`w-4 h-4 ${isPushingStore ? 'animate-spin' : ''}`} />
+                      <span>{isPushingStore ? 'Envoi en cours...' : '🚀 Synchroniser tout le catalogue vers le Cloud'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Smartphone Express Pairing Card */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-slate-850 dark:to-slate-800 rounded-2xl border border-sky-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
+                  <span className="text-xl">📱</span>
+                  <span>Jumelage Express Smartphone (1 Clic)</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Pour connecter immédiatement votre smartphone sans avoir à ressaisir l'URL Firebase, copiez simplement ce lien spécial et ouvrez-le une seule fois sur votre téléphone (ou envoyez-le vous par WhatsApp). Le smartphone sera jumelé et synchronisé instantanément !
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <div className="flex-1 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
+                    {cloudUrlInput.trim() ? generateSmartphoneSyncLink() : 'Renseignez l\'URL Firebase ci-dessus pour générer le lien de jumelage.'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopySmartphoneLink}
+                    disabled={!cloudUrlInput.trim()}
+                    className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-500 text-white transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 shrink-0"
+                  >
+                    {copiedLink ? <CheckCheck className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedLink ? '✓ Lien copié !' : 'Copier pour Smartphone / WhatsApp'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Step-by-Step 30-Second Free Setup Guide */}
+              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
+                  <span className="text-xl">⚡</span>
+                  <span>Guide rapide : Créer votre base gratuite en 1 minute</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">1</span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Créer le projet Firebase</h4>
+                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                      Rendez-vous sur <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-sky-500 underline font-bold">console.firebase.google.com</a> avec votre compte Google (100% gratuit à vie, aucune carte bancaire requise). Cliquez sur "Ajouter un projet".
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">2</span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Activer Realtime Database</h4>
+                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                      Dans le menu de gauche, cliquez sur <strong>Build &gt; Realtime Database</strong> puis sur "Créer une base de données". Choisissez l'emplacement (ex: Belgique / europe-west1).
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">3</span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Autoriser les Règles (Rules)</h4>
+                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                      Allez dans l'onglet <strong>Règles (Rules)</strong> et définissez <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded font-bold">".read": true, ".write": true</code>, puis cliquez sur Publier. Copiez l'URL et collez-la ci-dessus !
+                    </p>
+                  </div>
+                </div>
+
+                {/* Permanent build-time setup hint */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">Option développeur : Connexion automatique de tous les visiteurs</span>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Vous pouvez aussi coller votre URL dans <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded font-mono">src/config/cloudConfig.js</code> avant de déployer sur GitHub Pages pour que chaque visiteur soit automatiquement synchronisé en temps réel.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyConfigSnippet}
+                    disabled={!cloudUrlInput.trim()}
+                    className="ml-3 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
+                  >
+                    {copiedConfigSnippet ? 'Copié !' : 'Copier variable .env'}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          )}
 
         </div>
       </div>

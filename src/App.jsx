@@ -20,8 +20,14 @@ import {
   getStoredEmailConfig, 
   saveEmailConfig,
   getStoredSpecialOffer,
-  saveSpecialOffer
+  saveSpecialOffer,
+  saveOrders
 } from './utils/storage';
+import { 
+  subscribeToRealtimeSync, 
+  getCloudConfig, 
+  onSyncEvent 
+} from './utils/cloudSync';
 
 import { 
   Search
@@ -32,6 +38,55 @@ export default function App() {
   const [products, setProducts] = useState(getStoredProducts);
   const [emailConfig, setEmailConfig] = useState(getStoredEmailConfig);
   const [specialOffer, setSpecialOffer] = useState(getStoredSpecialOffer);
+
+  // Cloud Sync State & Dynamic Re-subscription
+  const [cloudConfigVersion, setCloudConfigVersion] = useState(0);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState(() => {
+    const cfg = getCloudConfig();
+    return cfg.firebaseUrl ? 'connecting' : 'unconfigured';
+  });
+
+  // Real-Time Multi-Device Cloud Synchronization (PC <-> Mobile <-> Visitors)
+  useEffect(() => {
+    let isMounted = true;
+
+    const unsubscribe = subscribeToRealtimeSync({
+      onProducts: (cloudProducts) => {
+        if (!isMounted || !Array.isArray(cloudProducts)) return;
+        setProducts(cloudProducts);
+        saveProducts(cloudProducts, false); // Local cache only, no loop
+      },
+      onSpecialOffer: (cloudOffer) => {
+        if (!isMounted || !cloudOffer) return;
+        setSpecialOffer(cloudOffer);
+        saveSpecialOffer(cloudOffer, false); // Local cache only, no loop
+      },
+      onOrders: (cloudOrders) => {
+        if (!isMounted || !Array.isArray(cloudOrders)) return;
+        saveOrders(cloudOrders, false);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('zoom_market_cloud_orders_synced', { detail: cloudOrders }));
+        }
+      },
+      onStatusChange: (status) => {
+        if (isMounted) {
+          setCloudSyncStatus(status);
+        }
+      }
+    });
+
+    const unlistenConfig = onSyncEvent((detail) => {
+      if (detail?.type === 'config_updated') {
+        setCloudConfigVersion((v) => v + 1);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+      unlistenConfig();
+    };
+  }, [cloudConfigVersion]);
 
   // Language State: 'fr' or 'ar'
   const [lang, setLang] = useState(() => {
@@ -464,6 +519,7 @@ export default function App() {
           onResetProducts={handleResetProducts}
           specialOffer={specialOffer}
           onUpdateSpecialOffer={handleUpdateSpecialOffer}
+          cloudSyncStatus={cloudSyncStatus}
         />
       )}
 
