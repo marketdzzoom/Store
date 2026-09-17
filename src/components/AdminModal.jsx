@@ -36,7 +36,11 @@ import {
   AlertCircle,
   ExternalLink,
   ShieldCheck,
-  Radio
+  Radio,
+  QrCode,
+  Download,
+  Smartphone,
+  Share2
 } from 'lucide-react';
 import { CATEGORIES } from '../data/initialProducts';
 import { formatPrice } from '../utils/formatters';
@@ -47,6 +51,11 @@ import {
   updateOrderStatus, 
   deleteOrderFromStorage 
 } from '../utils/storage';
+import {
+  generateDirectSyncLink,
+  generateInitialProductsCode,
+  downloadInitialProductsJs
+} from '../utils/directSync.js';
 import {
   getCloudConfig,
   saveCloudConfig,
@@ -182,6 +191,31 @@ export default function AdminModal({
   const [pushResult, setPushResult] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedConfigSnippet, setCopiedConfigSnippet] = useState(false);
+  const [copiedDirectLink, setCopiedDirectLink] = useState(false);
+  const [copiedInitialJs, setCopiedInitialJs] = useState(false);
+
+  // Direct 100% Frontend Sync Data (Zero Database)
+  const directSyncInfo = generateDirectSyncLink(products, specialOffer);
+
+  const handleCopyDirectLink = () => {
+    if (!directSyncInfo.url) return;
+    navigator.clipboard.writeText(directSyncInfo.url).then(() => {
+      setCopiedDirectLink(true);
+      setTimeout(() => setCopiedDirectLink(false), 3000);
+    }).catch(() => {});
+  };
+
+  const handleDownloadInitialJs = () => {
+    downloadInitialProductsJs(products);
+  };
+
+  const handleCopyInitialJs = () => {
+    const code = generateInitialProductsCode(products);
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedInitialJs(true);
+      setTimeout(() => setCopiedInitialJs(false), 3000);
+    }).catch(() => {});
+  };
 
   // Refresh cloud config state whenever modal is opened
   useEffect(() => {
@@ -821,25 +855,14 @@ export default function AdminModal({
             onClick={() => setActiveTab('cloud')}
             className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'cloud'
-                ? 'border-sky-500 text-sky-500 bg-white dark:bg-slate-900'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Cloud className="w-4 h-4 text-sky-500" />
-            <span>Synchro Cloud (PC & Mobile)</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 ${
-              cloudSyncStatus === 'connected'
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
-                : cloudSyncStatus === 'connecting' || cloudSyncStatus === 'reconnecting'
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 animate-pulse'
-                : cloudSyncStatus === 'error'
-                ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400'
-                : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                cloudSyncStatus === 'connected' ? 'bg-emerald-500 animate-ping' : cloudSyncStatus === 'error' ? 'bg-red-500' : 'bg-slate-400'
-              }`}></span>
-              {cloudSyncStatus === 'connected' ? 'En ligne' : cloudSyncStatus === 'reconnecting' ? 'Reconnexion...' : cloudSyncStatus === 'connecting' ? 'Connexion...' : cloudSyncStatus === 'error' ? 'Erreur' : 'Non lié'}
+            <Smartphone className="w-4 h-4 text-emerald-500" />
+            <span>📲 Synchro Smartphone & Export</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              Sans Base
             </span>
           </button>
         </div>
@@ -2501,246 +2524,182 @@ export default function AdminModal({
             );
           })()}
 
-          {/* TAB 5: CLOUD REALTIME SYNCHRONIZATION (PC & SMARTPHONE) */}
+          {/* TAB 5: ZERO-DATABASE SMARTPHONE SYNCHRONIZATION & EXPORT */}
           {activeTab === 'cloud' && (
             <div className="space-y-6 max-w-4xl mx-auto py-2">
               
-              {/* Header Card with Realtime Status Badge */}
-              <div className="p-5 rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+              {/* Header Banner: 100% Static Web Explained */}
+              <div className="p-5 sm:p-6 rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
                 
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-white/10 text-sky-300 border border-white/10 backdrop-blur-md">
-                      <CloudLightning className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Synchronisation Multi-Appareils</span>
-                    </div>
-                    <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                      <span>Cloud Temps Réel (PC ⇄ Smartphone)</span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                      Résout définitivement le problème de cache et d'isolation des navigateurs. Tout ce que vous modifiez sur ordinateur (masquage de produit, prix, stocks) est synchronisé instantanément sur votre téléphone et pour tous vos clients sur GitHub Pages.
+                <div className="relative z-10 space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+                    <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Mode 100% Statique (Sans Aucune Base de Données)</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                    <span>Synchroniser votre Smartphone en 1 Seconde</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                    Sur un site web statique (GitHub Pages), aucune base de données n'est nécessaire. Scannez simplement le QR Code ci-dessous avec votre smartphone pour appliquer instantanément tous vos produits masqués et modifications !
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 1: DIRECT SMARTPHONE SYNC (QR CODE & WHATSAPP LINK) */}
+              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+                <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-base">
+                    <QrCode className="w-5 h-5 text-emerald-500" />
+                    <span>Option 1 : Synchroniser Immédiatement votre Smartphone (QR Code / WhatsApp)</span>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    ⚡ Instantané & Zéro Configuration
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  {/* Left: QR Code Display */}
+                  <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+                    {directSyncInfo.qrUrl ? (
+                      <img
+                        src={directSyncInfo.qrUrl}
+                        alt="QR Code Synchronisation Smartphone"
+                        className="w-48 h-48 sm:w-52 sm:h-52 rounded-xl shadow-md border-2 border-slate-200 dark:border-slate-700 bg-white p-2"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-48 h-48 flex items-center justify-center bg-slate-200 rounded-xl text-slate-400">
+                        Chargement du QR Code...
+                      </div>
+                    )}
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 mt-2.5 flex items-center gap-1.5">
+                      <span>📸 Pointez l'appareil photo de votre téléphone ici</span>
                     </p>
                   </div>
 
-                  {/* Status Indicator Widget */}
-                  <div className="shrink-0 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center sm:items-end justify-center gap-1.5 text-center sm:text-right">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">État de la connexion</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${
-                        cloudSyncStatus === 'connected' 
-                          ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50 animate-pulse' 
-                          : cloudSyncStatus === 'connecting' || cloudSyncStatus === 'reconnecting'
-                          ? 'bg-amber-400 shadow-lg shadow-amber-400/50 animate-pulse'
-                          : cloudSyncStatus === 'error'
-                          ? 'bg-red-400 shadow-lg shadow-red-400/50'
-                          : 'bg-slate-400'
-                      }`} />
-                      <span className="text-sm font-extrabold text-white">
-                        {cloudSyncStatus === 'connected' && '🟢 En Ligne & Synchronisé'}
-                        {cloudSyncStatus === 'connecting' && '🟡 Connexion en cours...'}
-                        {cloudSyncStatus === 'reconnecting' && '🟡 Reconnexion...'}
-                        {cloudSyncStatus === 'unconfigured' && '⚪ Non Connecté (Local)'}
-                        {cloudSyncStatus === 'error' && '🔴 Erreur de Connexion'}
-                      </span>
+                  {/* Right: Steps & Actions */}
+                  <div className="space-y-4">
+                    <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span>Prenez votre smartphone (iPhone ou Android) et ouvrez l'appareil photo.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <span>Visez le QR Code sur votre écran d'ordinateur et cliquez sur le lien qui s'affiche.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span className="font-bold text-slate-900 dark:text-white">Votre smartphone s'ouvre instantanément avec tous vos produits masqués et réglages !</span>
+                      </div>
                     </div>
-                    {cloudConfig.lastSyncTime && (
-                      <span className="text-[10px] text-slate-400">
-                        Dernier sync : {new Date(cloudConfig.lastSyncTime).toLocaleTimeString('fr-FR')}
-                      </span>
-                    )}
+
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+                      <p className="text-[11px] text-slate-500">Pas envie de scanner ? Envoyez-vous le lien directement :</p>
+                      <button
+                        type="button"
+                        onClick={handleCopyDirectLink}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                      >
+                        {copiedDirectLink ? <CheckCheck className="w-4 h-4 text-emerald-200" /> : <Share2 className="w-4 h-4" />}
+                        <span>{copiedDirectLink ? '✓ Lien copié ! Envoyez-le vous sur WhatsApp' : '📲 Copier le lien pour Smartphone / WhatsApp'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Feedback messages */}
-              {testResult && (
-                <div className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-3 border ${
-                  testResult.success
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
-                    : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
-                }`}>
-                  {testResult.success ? (
-                    <CheckCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold">{testResult.success ? 'Succès de connexion !' : 'Erreur de connexion'}</p>
-                    <p className="mt-0.5 leading-relaxed">{testResult.message || testResult.error}</p>
-                  </div>
-                </div>
-              )}
-
-              {pushResult && (
-                <div className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-3 border ${
-                  pushResult.success
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
-                    : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
-                }`}>
-                  {pushResult.success ? (
-                    <CheckCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold">{pushResult.success ? 'Catalogue synchronisé avec succès !' : 'Erreur de synchronisation'}</p>
-                    <p className="mt-0.5 leading-relaxed">{pushResult.message || pushResult.error}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Form Card: Firebase Credentials */}
+              {/* CARD 2: PERMANENT CATALOG EXPORT FOR ALL VISITORS */}
               <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-base">
-                  <ShieldCheck className="w-5 h-5 text-sky-500" />
-                  <span>Configuration de la Base Firebase Realtime Database</span>
+                <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-base">
+                    <Download className="w-5 h-5 text-sky-500" />
+                    <span>Option 2 : Rendre Définitif pour TOUS les Visiteurs (GitHub Pages)</span>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                    🌍 Pour Tous les Clients
+                  </span>
                 </div>
 
-                <div className="space-y-4">
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Sur un site statique déployé sur GitHub Pages, le catalogue que voient les clients provient du fichier <code className="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-sky-600 font-mono">src/data/initialProducts.js</code>. Pour que vos produits masqués soient appliqués automatiquement à <strong>chaque nouveau visiteur</strong> :
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleDownloadInitialJs}
+                    className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>📥 Télécharger initialProducts.js à jour</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyInitialJs}
+                    className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition-all flex items-center gap-2 active:scale-95"
+                  >
+                    {copiedInitialJs ? <CheckCheck className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedInitialJs ? '✓ Code copié !' : '📋 Copier le code du catalogue'}</span>
+                  </button>
+                </div>
+
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+                  <span className="text-base">💡</span>
+                  <p className="leading-relaxed">
+                    <strong>Astuce ultra-rapide :</strong> Vous pouvez simplement me dire dans ce chat quels articles vous avez masqués (par exemple "Masque la montre et le sac"), et je les enregistre directement dans votre projet ! Vous n'aurez qu'à faire un <code className="font-mono bg-white/60 dark:bg-black/30 px-1 rounded">git push</code>.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 3: OPTIONAL FIREBASE SETTINGS (COLLAPSIBLE / OPTIONAL) */}
+              <details className="group p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
+                <summary className="cursor-pointer font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between list-none">
+                  <span className="flex items-center gap-2">
+                    <Cloud className="w-4 h-4 text-slate-400" />
+                    <span>Option Avancée : Base Google Firebase (Optionnel si vous le souhaitez plus tard)</span>
+                  </span>
+                  <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                  <p className="text-[11px] text-slate-500">
+                    Si vous souhaitez une synchronisation automatique en direct via le Cloud sans passer par un QR code :
+                  </p>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      URL de votre Realtime Database <span className="text-red-500">*</span>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      URL Realtime Database (ex: https://mon-projet-default-rtdb.firebaseio.com)
                     </label>
                     <input
                       type="url"
                       value={cloudUrlInput}
                       onChange={(e) => setCloudUrlInput(e.target.value)}
-                      placeholder="https://zoom-market-dz-default-rtdb.firebaseio.com"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                    />
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      L'URL fournie par Google Firebase se termine généralement par <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">firebaseio.com</code>
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Clé Secrète de Base de Données / Auth Token <span className="text-slate-400 font-normal">(Optionnel)</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={cloudAuthInput}
-                      onChange={(e) => setCloudAuthInput(e.target.value)}
-                      placeholder="Laisser vide si vos règles sont configurées sur .read: true, .write: true"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono"
                     />
                   </div>
-
-                  {/* Actions Buttons Grid */}
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleTestConnection}
-                      disabled={isTestingCloud || !cloudUrlInput.trim()}
-                      className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${isTestingCloud ? 'animate-spin text-sky-500' : ''}`} />
-                      <span>{isTestingCloud ? 'Test en cours...' : 'Tester la connexion'}</span>
-                    </button>
-
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={handleSaveCloudSettings}
                       disabled={!cloudUrlInput.trim()}
-                      className="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-500/20 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                      className="px-3 py-2 rounded-lg text-xs font-bold bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-50"
                     >
-                      <Check className="w-4 h-4" />
-                      <span>Enregistrer les paramètres</span>
+                      Enregistrer
                     </button>
-
                     <button
                       type="button"
-                      onClick={handlePushFullStore}
-                      disabled={isPushingStore || !cloudUrlInput.trim()}
-                      className="px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95 sm:ml-auto"
-                      title="Envoie instantanément tous les produits de cet ordinateur vers le Cloud pour synchroniser vos mobiles"
+                      onClick={handleTestConnection}
+                      disabled={!cloudUrlInput.trim() || isTestingCloud}
+                      className="px-3 py-2 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
                     >
-                      <CloudLightning className={`w-4 h-4 ${isPushingStore ? 'animate-spin' : ''}`} />
-                      <span>{isPushingStore ? 'Envoi en cours...' : '🚀 Synchroniser tout le catalogue vers le Cloud'}</span>
+                      {isTestingCloud ? 'Test...' : 'Tester'}
                     </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Smartphone Express Pairing Card */}
-              <div className="p-5 sm:p-6 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-slate-850 dark:to-slate-800 rounded-2xl border border-sky-200 dark:border-slate-700 space-y-3">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
-                  <span className="text-xl">📱</span>
-                  <span>Jumelage Express Smartphone (1 Clic)</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Pour connecter immédiatement votre smartphone sans avoir à ressaisir l'URL Firebase, copiez simplement ce lien spécial et ouvrez-le une seule fois sur votre téléphone (ou envoyez-le vous par WhatsApp). Le smartphone sera jumelé et synchronisé instantanément !
-                </p>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                  <div className="flex-1 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
-                    {cloudUrlInput.trim() ? generateSmartphoneSyncLink() : 'Renseignez l\'URL Firebase ci-dessus pour générer le lien de jumelage.'}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopySmartphoneLink}
-                    disabled={!cloudUrlInput.trim()}
-                    className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-500 text-white transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 shrink-0"
-                  >
-                    {copiedLink ? <CheckCheck className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedLink ? '✓ Lien copié !' : 'Copier pour Smartphone / WhatsApp'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Step-by-Step 30-Second Free Setup Guide */}
-              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
-                  <span className="text-xl">⚡</span>
-                  <span>Guide rapide : Créer votre base gratuite en 1 minute</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">1</span>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Créer le projet Firebase</h4>
-                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
-                      Rendez-vous sur <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-sky-500 underline font-bold">console.firebase.google.com</a> avec votre compte Google (100% gratuit à vie, aucune carte bancaire requise). Cliquez sur "Ajouter un projet".
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">2</span>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Activer Realtime Database</h4>
-                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
-                      Dans le menu de gauche, cliquez sur <strong>Build &gt; Realtime Database</strong> puis sur "Créer une base de données". Choisissez l'emplacement (ex: Belgique / europe-west1).
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                    <span className="w-6 h-6 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">3</span>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Autoriser les Règles (Rules)</h4>
-                    <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
-                      Allez dans l'onglet <strong>Règles (Rules)</strong> et définissez <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded font-bold">".read": true, ".write": true</code>, puis cliquez sur Publier. Copiez l'URL et collez-la ci-dessus !
-                    </p>
-                  </div>
-                </div>
-
-                {/* Permanent build-time setup hint */}
-                <div className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">Option développeur : Connexion automatique de tous les visiteurs</span>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Vous pouvez aussi coller votre URL dans <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded font-mono">src/config/cloudConfig.js</code> avant de déployer sur GitHub Pages pour que chaque visiteur soit automatiquement synchronisé en temps réel.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyConfigSnippet}
-                    disabled={!cloudUrlInput.trim()}
-                    className="ml-3 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
-                  >
-                    {copiedConfigSnippet ? 'Copié !' : 'Copier variable .env'}
-                  </button>
-                </div>
-              </div>
+              </details>
 
             </div>
           )}

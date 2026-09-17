@@ -10,7 +10,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-freshness-v2';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v3-pure-static';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -43,46 +43,25 @@ export const DEFAULT_SPECIAL_OFFER = {
 // Load products from localStorage or fallback to initial dataset
 export function getStoredProducts() {
   try {
+    const cachedVersion = localStorage.getItem(CATALOG_BUILD_VERSION_KEY);
+    // Automatic cache invalidation: if a new version was deployed, load fresh catalog!
+    if (cachedVersion !== CURRENT_CATALOG_VERSION) {
+      localStorage.setItem(CATALOG_BUILD_VERSION_KEY, CURRENT_CATALOG_VERSION);
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(INITIAL_PRODUCTS));
+      return INITIAL_PRODUCTS;
+    }
+
     const data = localStorage.getItem(PRODUCTS_KEY);
     if (data !== null) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        let hasChanges = false;
-        const merged = parsed.map((p) => {
-          const init = INITIAL_PRODUCTS.find((i) => i.id === p.id);
-          if (init) {
-            const needsSizes = (!p.sizes || p.sizes.length === 0) && init.sizes && init.sizes.length > 0;
-            const needsColors = (!p.colors || p.colors.length === 0) && init.colors && init.colors.length > 0;
-            if (needsSizes || needsColors) {
-              hasChanges = true;
-              return {
-                ...p,
-                sizes: (p.sizes && p.sizes.length > 0) ? p.sizes : (init.sizes || []),
-                colors: (p.colors && p.colors.length > 0) ? p.colors : (init.colors || [])
-              };
-            }
-          }
-          return p;
-        });
-
-        if (!merged.some((p) => p.id === 'prod-9')) {
-          const prod9 = INITIAL_PRODUCTS.find((i) => i.id === 'prod-9');
-          if (prod9) {
-            merged.push(prod9);
-            hasChanges = true;
-          }
-        }
-
-        if (hasChanges) {
-          saveProducts(merged);
-        }
-        return merged;
+        return parsed;
       }
     }
   } catch (e) {
     console.error('Error reading products from localStorage:', e);
   }
-  saveProducts(INITIAL_PRODUCTS);
+  saveProducts(INITIAL_PRODUCTS, false);
   return INITIAL_PRODUCTS;
 }
 

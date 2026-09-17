@@ -28,6 +28,10 @@ import {
   getCloudConfig, 
   onSyncEvent 
 } from './utils/cloudSync';
+import { 
+  decodeCatalogState, 
+  applyCatalogState 
+} from './utils/directSync.js';
 
 import { 
   Search
@@ -38,6 +42,32 @@ export default function App() {
   const [products, setProducts] = useState(getStoredProducts);
   const [emailConfig, setEmailConfig] = useState(getStoredEmailConfig);
   const [specialOffer, setSpecialOffer] = useState(getStoredSpecialOffer);
+  const [directSyncToast, setDirectSyncToast] = useState(null);
+
+  // Zero-Database Direct Smartphone Pairing & Catalog Synchronization (?sync_state=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const syncStateParam = params.get('sync_state');
+      if (syncStateParam) {
+        const payload = decodeCatalogState(syncStateParam);
+        if (payload) {
+          const applied = applyCatalogState(payload, products, specialOffer);
+          if (applied) {
+            setProducts(applied.products);
+            if (applied.specialOffer) setSpecialOffer(applied.specialOffer);
+            setDirectSyncToast('📱 Synchronisation directe réussie ! Vos produits masqués et réglages sont maintenant appliqués sur ce smartphone.');
+            setTimeout(() => setDirectSyncToast(null), 6000);
+          }
+        }
+        params.delete('sync_state');
+        const newSearch = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
+      }
+    } catch (err) {
+      console.error('Error applying direct sync from URL:', err);
+    }
+  }, []);
 
   // Cloud Sync State & Dynamic Re-subscription
   const [cloudConfigVersion, setCloudConfigVersion] = useState(0);
@@ -367,6 +397,23 @@ export default function App() {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-brand-orange selection:text-white transition-colors duration-200 pb-16 md:pb-0">
       
+      {/* Zero-Database Direct Sync Toast Notification */}
+      {directSyncToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] p-3.5 bg-emerald-600 text-white font-bold text-xs rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-emerald-400">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📱</span>
+            <span>{directSyncToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDirectSyncToast(null)}
+            className="p-1 text-white/80 hover:text-white text-xs font-black rounded-lg"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <Header
         searchTerm={searchTerm}
