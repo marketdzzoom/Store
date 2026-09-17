@@ -861,9 +861,9 @@ export default function AdminModal({
             }`}
           >
             <Smartphone className="w-4 h-4 text-emerald-500" />
-            <span>📲 Synchro Smartphone & Export</span>
+            <span>📲 Synchro & Déploiement</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-              Sans Base
+              Automatisé
             </span>
           </button>
         </div>
@@ -2465,7 +2465,7 @@ export default function AdminModal({
                             <button
                               type="button"
                               onClick={() => {
-                                const link = getProductMarketingLink(p.id);
+                                const link = getProductMarketingLink(p);
                                 if (navigator?.clipboard?.writeText) {
                                   navigator.clipboard.writeText(link).then(() => {
                                     setCopiedProductId(p.id);
@@ -2570,89 +2570,63 @@ export default function AdminModal({
           {activeTab === 'cloud' && (
             <div className="space-y-6 max-w-4xl mx-auto py-2">
               
-              {/* Header Banner: 100% Static Web Explained */}
+              {/* Header Banner: Automated Sync Explained */}
               <div className="p-5 sm:p-6 rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
                 
                 <div className="relative z-10 space-y-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-                    <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Mode 100% Statique (Sans Aucune Base de Données)</span>
+                    <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Synchronisation 100% Automatisée (Zéro QR Code)</span>
                   </div>
                   <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                    <span>Synchroniser votre Smartphone en 1 Seconde</span>
+                    <span>Vos Produits & Liens Pub en Temps Réel sur Smartphone</span>
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                    Sur un site web statique (GitHub Pages), aucune base de données n'est nécessaire. Scannez simplement le QR Code ci-dessous avec votre smartphone pour appliquer instantanément tous vos produits masqués et modifications !
+                    Aucun client ne doit scanner de QR code ! Vos visiteurs venant de Facebook Ads, TikTok Ads ou WhatsApp ouvrent directement la page du produit et commandent en 1 clic.
                   </p>
                 </div>
               </div>
 
-              {/* CARD 1: DIRECT SMARTPHONE SYNC (QR CODE & WHATSAPP LINK) */}
-              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+              {/* CARD 1: AUTONOMOUS MARKETING LINKS (ZERO DB / ZERO SCAN) */}
+              <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-slate-700/60 pb-3">
                   <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-base">
-                    <QrCode className="w-5 h-5 text-emerald-500" />
-                    <span>Option 1 : Synchroniser Immédiatement votre Smartphone (QR Code / WhatsApp)</span>
+                    <Share2 className="w-5 h-5 text-emerald-500" />
+                    <span>Solution 1 : Liens Publicitaires Autonomes (Facebook, TikTok, Instagram)</span>
                   </div>
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    ⚡ Instantané & Zéro Configuration
+                    ⚡ 100% Automatisé & Zéro Scan
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                  {/* Left: QR Code Display */}
-                  <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
-                    {directSyncInfo.qrUrl ? (
-                      <img
-                        src={directSyncInfo.qrUrl}
-                        onError={(e) => {
-                          if (!e.currentTarget.dataset.fallback) {
-                            e.currentTarget.dataset.fallback = 'true';
-                            e.currentTarget.src = `https://quickchart.io/qr?size=300&text=${encodeURIComponent(directSyncInfo.url)}`;
-                          }
-                        }}
-                        alt="QR Code Synchronisation Smartphone"
-                        className="w-48 h-48 sm:w-52 sm:h-52 rounded-xl shadow-md border-2 border-slate-200 dark:border-slate-700 bg-white p-2"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-48 h-48 flex items-center justify-center bg-slate-200 rounded-xl text-slate-400">
-                        Chargement du QR Code...
+                <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p>
+                    Chaque bouton <strong className="text-brand-orange font-bold">« 🔗 Lien Pub »</strong> présent sur vos articles dans l'onglet <span className="font-bold text-slate-900 dark:text-white">Boutique</span> génère un lien prêt à l'emploi.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                        <Check className="w-4 h-4 text-emerald-500" />
+                        <span>Autonomie Totale</span>
                       </div>
-                    )}
-                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 mt-2.5 flex items-center gap-1.5">
-                      <span>📸 Pointez l'appareil photo de votre téléphone ici</span>
-                    </p>
-                  </div>
-
-                  {/* Right: Steps & Actions */}
-                  <div className="space-y-4">
-                    <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
-                        <span>Prenez votre smartphone (iPhone ou Android) et ouvrez l'appareil photo.</span>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
-                        <span>Visez le QR Code sur votre écran d'ordinateur et cliquez sur le lien qui s'affiche.</span>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
-                        <span className="font-bold text-slate-900 dark:text-white">Votre smartphone s'ouvre instantanément avec tous vos produits masqués et réglages !</span>
-                      </div>
+                      <p className="text-[11px] text-slate-500">Le lien transporte les infos du produit (titre, prix, photos). Même un article tout juste créé s'affiche instantanément.</p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
-                      <p className="text-[11px] text-slate-500">Pas envie de scanner ? Envoyez-vous le lien directement :</p>
-                      <button
-                        type="button"
-                        onClick={handleCopyDirectLink}
-                        className="w-full py-2.5 px-4 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
-                      >
-                        {copiedDirectLink ? <CheckCheck className="w-4 h-4 text-emerald-200" /> : <Share2 className="w-4 h-4" />}
-                        <span>{copiedDirectLink ? '✓ Lien copié ! Envoyez-le vous sur WhatsApp' : '📲 Copier le lien pour Smartphone / WhatsApp'}</span>
-                      </button>
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                        <Check className="w-4 h-4 text-emerald-500" />
+                        <span>Landing Page Directe</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">Le client arrive directement sur la fiche avec le bouton d'achat express <strong className="text-slate-700 dark:text-slate-300">⚡ Acheter maintenant</strong>.</p>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                        <Check className="w-4 h-4 text-emerald-500" />
+                        <span>Tous Réseaux Sociaux</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">Parfait pour Facebook Ads, TikTok Ads, campagnes WhatsApp, stories Instagram ou messages directs.</p>
                     </div>
                   </div>
                 </div>

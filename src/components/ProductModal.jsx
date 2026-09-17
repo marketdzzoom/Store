@@ -39,7 +39,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const handleCopyProductLink = (e) => {
     e?.stopPropagation?.();
     if (!product) return;
-    const link = getProductMarketingLink(product.id);
+    const link = getProductMarketingLink(product);
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(link).then(() => {
         setCopiedLink(true);

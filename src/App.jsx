@@ -32,6 +32,7 @@ import {
   decodeCatalogState, 
   applyCatalogState 
 } from './utils/directSync.js';
+import { decodeProductFromUrl } from './utils/formatters';
 
 import { 
   Search
@@ -291,11 +292,14 @@ export default function App() {
   };
 
   // Marketing Deep-Linking: auto-open product from URL parameter (?p=prod-1, ?produit=prod-1, or #prod-1)
+  // Supports self-contained product data (?pd=...) so ANY copied link opens immediately on any smartphone!
   useEffect(() => {
     const handleUrlProduct = () => {
       try {
         const params = new URLSearchParams(window.location.search);
         let rawId = params.get('p') || params.get('produit') || params.get('product');
+        const encodedData = params.get('pd');
+
         if (!rawId && window.location.hash) {
           const hashClean = window.location.hash.replace(/^#\/?/, '').trim();
           if (hashClean.startsWith('prod-') || !isNaN(hashClean)) {
@@ -303,9 +307,39 @@ export default function App() {
           }
         }
 
-        if (rawId && products && products.length > 0) {
+        if (rawId) {
           const cleanId = decodeURIComponent(rawId).trim().replace(/\/+$/, '');
-          const target = products.find((p) => p.id === cleanId || p.id === `prod-${cleanId}`);
+          let target = products && products.length > 0
+            ? products.find((p) => p.id === cleanId || p.id === `prod-${cleanId}`)
+            : null;
+
+          // If product payload was provided in URL (allows instant opening on any device without DB)
+          if (encodedData) {
+            const decodedProd = decodeProductFromUrl(encodedData);
+            if (decodedProd && (decodedProd.id === cleanId || !target)) {
+              target = target ? { ...target, ...decodedProd } : decodedProd;
+              // Ensure product is in memory and local cache for smooth purchase flow
+              setProducts((prev) => {
+                const current = Array.isArray(prev) ? prev : [];
+                const exists = current.some((p) => p.id === target.id);
+                if (exists) {
+                  return current.map((p) => (p.id === target.id ? target : p));
+                }
+                return [target, ...current];
+              });
+              saveProducts([target, ...(products || []).filter((p) => p.id !== target.id)], false);
+
+              // Clean ?pd=... from address bar for a neat customer experience
+              try {
+                params.delete('pd');
+                const cleanQuery = params.toString() ? `?${params.toString()}` : '';
+                window.history.replaceState(null, '', window.location.pathname + cleanQuery + window.location.hash);
+              } catch (e) {
+                // Ignore
+              }
+            }
+          }
+
           if (target) {
             setQuickViewProduct(target);
           }

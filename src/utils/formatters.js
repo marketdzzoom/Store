@@ -92,17 +92,118 @@ export function formatPhoneForWhatsApp(phone) {
 }
 
 /**
+ * Encodes a product into a compact, URL-safe Base64 string
+ * Used to make marketing landing page links completely self-contained
+ * so ANY customer clicking from Facebook / TikTok / WhatsApp sees the exact
+ * product immediately, even if it hasn't been committed to GitHub yet!
+ */
+export function encodeProductForUrl(product) {
+  if (!product || typeof product !== 'object') return '';
+  try {
+    const minified = {
+      id: product.id,
+      title: product.title,
+      price: product.price
+    };
+    if (product.titleAr) minified.titleAr = product.titleAr;
+    if (product.oldPrice) minified.oldPrice = product.oldPrice;
+    if (product.category) minified.category = product.category;
+    if (product.badge) minified.badge = product.badge;
+    if (product.description) minified.description = product.description;
+    if (product.descriptionAr) minified.descriptionAr = product.descriptionAr;
+
+    // Only include external URLs (do not blow up URL with large local data URIs)
+    if (product.image && typeof product.image === 'string' && !product.image.startsWith('data:')) {
+      minified.image = product.image;
+    }
+    if (Array.isArray(product.images)) {
+      const webImages = product.images.filter(img => typeof img === 'string' && !img.startsWith('data:'));
+      if (webImages.length > 0) {
+        minified.images = webImages.slice(0, 4);
+      }
+    }
+    if (Array.isArray(product.colors) && product.colors.length > 0) {
+      minified.colors = product.colors;
+    }
+    if (product.colorImageMap && typeof product.colorImageMap === 'object') {
+      minified.colorImageMap = product.colorImageMap;
+    }
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      minified.sizes = product.sizes;
+    }
+    if (product.stockQuantity !== undefined) minified.stockQuantity = product.stockQuantity;
+    if (product.inStock !== undefined) minified.inStock = product.inStock;
+    if (product.rating) minified.rating = product.rating;
+    if (product.reviewsCount) minified.reviewsCount = product.reviewsCount;
+
+    const jsonStr = JSON.stringify(minified);
+    const bytes = new TextEncoder().encode(jsonStr);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (err) {
+    console.error('Error encoding product for URL:', err);
+    return '';
+  }
+}
+
+/**
+ * Decodes a product from a compact URL-safe Base64 string
+ */
+export function decodeProductFromUrl(encoded) {
+  if (!encoded || typeof encoded !== 'string') return null;
+  try {
+    let base64 = encoded.trim().replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const jsonStr = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(jsonStr);
+    if (parsed && (parsed.id || parsed.title)) {
+      return parsed;
+    }
+    return null;
+  } catch (err) {
+    console.error('Error decoding product from URL:', err);
+    return null;
+  }
+}
+
+/**
  * Builds a direct, marketing-ready product landing page link
  * Formatted for Facebook Ads, TikTok Ads, Instagram, and WhatsApp
+ * Embeds the product payload so it opens seamlessly on ANY device in the world!
  */
-export function getProductMarketingLink(productId) {
-  if (typeof window === 'undefined' || !productId) return '';
+export function getProductMarketingLink(productOrId, optionalProduct = null) {
+  if (typeof window === 'undefined') return '';
+  const product = typeof productOrId === 'object' ? productOrId : optionalProduct;
+  const productId = typeof productOrId === 'string' ? productOrId : product?.id;
+  if (!productId) return '';
+
   try {
     const origin = window.location.origin;
     const pathname = window.location.pathname;
-    return `${origin}${pathname}?p=${encodeURIComponent(productId)}`;
+    const url = new URL(`${origin}${pathname}`);
+    url.searchParams.set('p', productId);
+
+    if (product) {
+      const encoded = encodeProductForUrl(product);
+      if (encoded && encoded.length < 1800) {
+        url.searchParams.set('pd', encoded);
+      }
+    }
+
+    return url.toString();
   } catch (e) {
     return `?p=${encodeURIComponent(productId)}`;
   }
 }
+
 
