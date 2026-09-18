@@ -49,8 +49,11 @@ import {
   saveSpecialOffer, 
   getStoredOrders, 
   updateOrderStatus, 
-  deleteOrderFromStorage 
+  deleteOrderFromStorage,
+  addOrderToStorage,
+  saveOrders
 } from '../utils/storage';
+import { WILAYAS } from '../data/wilayas';
 import {
   generateDirectSyncLink,
   generateInitialProductsCode,
@@ -62,7 +65,8 @@ import {
   testFirebaseConnection,
   pushFullStoreToCloud,
   generateSmartphoneSyncLink,
-  normalizeFirebaseUrl
+  normalizeFirebaseUrl,
+  fetchOrdersFromCloud
 } from '../utils/cloudSync';
 import { PRESET_COLORS, getColorStyle } from '../utils/colors';
 import { 
@@ -116,6 +120,25 @@ export default function AdminModal({
   const [orderStatusFilter, setOrderStatusFilter] = useState('Tous');
   const [selectedMonth, setSelectedMonth] = useState('Tous');
   const [selectedYear, setSelectedYear] = useState('Toutes');
+
+  // Manual Order Creation State
+  const [showManualOrderModal, setShowManualOrderModal] = useState(false);
+  const [manualCustomerName, setManualCustomerName] = useState('');
+  const [manualPhone, setManualPhone] = useState('');
+  const [manualPhoneBackup, setManualPhoneBackup] = useState('');
+  const [manualWilaya, setManualWilaya] = useState('16 - Alger');
+  const [manualAddress, setManualAddress] = useState('');
+  const [manualProduct, setManualProduct] = useState('');
+  const [manualSize, setManualSize] = useState('38');
+  const [manualColor, setManualColor] = useState('Beige');
+  const [manualQuantity, setManualQuantity] = useState(1);
+  const [manualPrice, setManualPrice] = useState(5900);
+  const [manualShipping, setManualShipping] = useState(400);
+  const [manualStatus, setManualStatus] = useState('En attente');
+  const [manualNotes, setManualNotes] = useState('');
+  const [manualOrderSuccess, setManualOrderSuccess] = useState(false);
+  const [pasteInputText, setPasteInputText] = useState('');
+  const [showPasteBox, setShowPasteBox] = useState(false);
 
   // Add Product Form State
   const [title, setTitle] = useState('');
@@ -355,11 +378,31 @@ export default function AdminModal({
   const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
   const [refreshToast, setRefreshToast] = useState(false);
 
-  // Manual refresh function triggered by clicking the rounded arrow button
-  const handleRefreshOrders = () => {
+  // Manual refresh function triggered by clicking the rounded arrow button or sync
+  const handleRefreshOrders = async () => {
     setIsRefreshing(true);
-    const freshOrders = getStoredOrders();
-    setOrders(freshOrders);
+    try {
+      const cloudOrders = await fetchOrdersFromCloud();
+      if (cloudOrders && cloudOrders.length > 0) {
+        const localOrders = getStoredOrders();
+        const merged = [...localOrders];
+        let hasNew = false;
+        cloudOrders.forEach((co) => {
+          if (!merged.some((m) => m.id === co.id)) {
+            merged.unshift(co);
+            hasNew = true;
+          }
+        });
+        if (hasNew) {
+          saveOrders(merged, false);
+        }
+        setOrders(merged);
+      } else {
+        setOrders(getStoredOrders());
+      }
+    } catch (e) {
+      setOrders(getStoredOrders());
+    }
     setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
     setRefreshToast(true);
     setTimeout(() => {
@@ -370,11 +413,143 @@ export default function AdminModal({
     }, 3000);
   };
 
+  // Wilaya selection change updates default delivery fee automatically
+  const handleManualWilayaChange = (wilayaName) => {
+    setManualWilaya(wilayaName);
+    const found = WILAYAS.find((w) => w.name === wilayaName);
+    if (found) {
+      setManualShipping(found.fee);
+    }
+  };
+
+  // Helper parser for orders pasted directly from EmailJS or WhatsApp notification
+  const handleParsePastedOrder = () => {
+    if (!pasteInputText.trim()) return;
+    const text = pasteInputText;
+
+    // Nom client:
+    const nameMatch = text.match(/(?:Nom\s*(?:&|\/)?\s*Pr[eé]nom|Nom|Client)\s*[:=]\s*([^\r\n]+)/i);
+    if (nameMatch && nameMatch[1]) setManualCustomerName(nameMatch[1].trim());
+
+    // Numéro de téléphone:
+    const phoneMatch = text.match(/(?:T[eé]l[eé]phone|T[eé]l|Phone|Mobile)\s*[:=]\s*([0-9\s+]+)/i);
+    if (phoneMatch && phoneMatch[1]) setManualPhone(phoneMatch[1].trim());
+
+    // Wilaya:
+    const wilayaMatch = text.match(/Wilaya\s*[:=]\s*([^\r\n]+)/i);
+    if (wilayaMatch && wilayaMatch[1]) {
+      const parsedWilayaStr = wilayaMatch[1].trim();
+      const matched = WILAYAS.find((w) => 
+        parsedWilayaStr.toLowerCase().includes(w.name.toLowerCase().replace(/^\d+\s*-\s*/, '')) ||
+        w.name.toLowerCase().includes(parsedWilayaStr.toLowerCase())
+      );
+      if (matched) {
+        setManualWilaya(matched.name);
+        setManualShipping(matched.fee);
+      } else {
+        setManualWilaya(parsedWilayaStr);
+      }
+    }
+
+    // Adresse ou Commune:
+    const addrMatch = text.match(/(?:Adresse|Commune|Ville)\s*[:=]\s*([^\r\n]+)/i);
+    if (addrMatch && addrMatch[1]) setManualAddress(addrMatch[1].trim());
+
+    // Taille / Pointure:
+    const sizeMatch = text.match(/(?:Taille|Pointure|Size)\s*[:=]\s*([^\r\n,\s]+)/i);
+    if (sizeMatch && sizeMatch[1]) setManualSize(sizeMatch[1].trim());
+
+    // Couleur:
+    const colorMatch = text.match(/(?:Couleur|Color)\s*[:=]\s*([^\r\n,\s]+)/i);
+    if (colorMatch && colorMatch[1]) setManualColor(colorMatch[1].trim());
+
+    // Quantité:
+    const qtyMatch = text.match(/(?:Quantit[eé]|Qt[eé]|Qty)\s*[:=]\s*(\d+)/i);
+    if (qtyMatch && qtyMatch[1]) setManualQuantity(parseInt(qtyMatch[1], 10));
+
+    setShowPasteBox(false);
+  };
+
+  // Submit and save manual order into storage
+  const handleCreateManualOrder = (e) => {
+    if (e) e.preventDefault();
+    if (!manualCustomerName.trim() || !manualPhone.trim()) {
+      alert('Veuillez renseigner au moins le nom et le numéro de téléphone du client.');
+      return;
+    }
+
+    const priceNum = Number(manualPrice) || 5900;
+    const qtyNum = Number(manualQuantity) || 1;
+    const shippingNum = Number(manualShipping) || 0;
+    const defaultProductTitle = products[0]?.title || 'تصميم UGG طبي أصلي';
+
+    const orderData = {
+      customer: {
+        fullName: manualCustomerName.trim(),
+        phone: manualPhone.trim(),
+        phoneBackup: manualPhoneBackup.trim(),
+        wilaya: manualWilaya,
+        address: manualAddress.trim() || manualWilaya,
+        notes: manualNotes.trim()
+      },
+      items: [
+        {
+          title: manualProduct || defaultProductTitle,
+          price: priceNum,
+          quantity: qtyNum,
+          selectedSize: manualSize || '38',
+          selectedColor: manualColor || 'Beige'
+        }
+      ],
+      subtotal: priceNum * qtyNum,
+      shippingFee: shippingNum,
+      total: (priceNum * qtyNum) + shippingNum,
+      date: new Date().toLocaleDateString('fr-DZ'),
+      status: manualStatus || 'En attente'
+    };
+
+    const updated = addOrderToStorage(orderData);
+    setOrders(updated);
+    setManualOrderSuccess(true);
+    setTimeout(() => {
+      setManualOrderSuccess(false);
+      setShowManualOrderModal(false);
+      setManualCustomerName('');
+      setManualPhone('');
+      setManualPhoneBackup('');
+      setManualAddress('');
+      setManualNotes('');
+      setPasteInputText('');
+    }, 1000);
+  };
+
   // Load orders when modal is open and auto-listen for new incoming orders
   useEffect(() => {
     if (isOpen) {
       setOrders(getStoredOrders());
       setLastRefreshedAt(new Date().toLocaleTimeString('fr-DZ'));
+
+      // If cloud is configured, automatically fetch latest orders from cloud
+      const cfg = getCloudConfig();
+      if (cfg.firebaseUrl) {
+        fetchOrdersFromCloud().then((cloudOrders) => {
+          if (cloudOrders && cloudOrders.length > 0) {
+            const localOrders = getStoredOrders();
+            const merged = [...localOrders];
+            let hasNew = false;
+            cloudOrders.forEach((co) => {
+              if (!merged.some((m) => m.id === co.id)) {
+                merged.unshift(co);
+                hasNew = true;
+              }
+            });
+            if (hasNew) {
+              saveOrders(merged, false);
+              setOrders(merged);
+            }
+          }
+        }).catch(() => {});
+      }
 
       // 1. Listen for localStorage changes from another tab/browser window
       const handleStorageChange = (e) => {
@@ -875,6 +1050,46 @@ export default function AdminModal({
           {activeTab === 'orders' && (
             <div className="space-y-4">
               
+              {/* Sync & Order Reception Info Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-blue-500/10 border border-amber-300 dark:border-amber-700/60 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-brand-orange text-white rounded-xl shadow-xs mt-0.5 shrink-0">
+                    <ClipboardList className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <span>Commandes reçues par Email (marketdzzoom@gmail.com)</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded-full font-bold border border-emerald-200 dark:border-emerald-800">
+                        Email 100% Fonctionnel
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Chaque commande passée sur smartphone arrive directement dans votre boîte Gmail. Pour afficher vos commandes reçues sur ce tableau de bord PC, cliquez simplement sur <strong>« + Saisir commande »</strong>, ou connectez Firebase pour une synchronisation automatique en direct !
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualOrderModal(true)}
+                    className="px-3.5 py-1.5 bg-brand-orange hover:bg-orange-600 text-white text-xs font-black rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-1.5"
+                    title="Enregistrer manuellement une commande reçue par Email ou Téléphone"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>+ Saisir commande</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('cloud')}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-brand-orange text-xs font-bold rounded-xl active:scale-95 transition-all flex items-center gap-1"
+                    title="Voir les options de synchronisation multi-appareils"
+                  >
+                    <CloudLightning className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Synchro Cloud</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Filter Bar with Month, Year & Status Selectors */}
               <div className="p-4 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -883,7 +1098,18 @@ export default function AdminModal({
                     Filtrer les Commandes par Période (Mois / Année) & Statut
                   </span>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Bouton pour ajouter manuellement une commande reçue par email */}
+                    <button
+                      type="button"
+                      onClick={() => setShowManualOrderModal(true)}
+                      className="px-3 py-1.5 bg-brand-orange hover:bg-orange-600 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 active:scale-95"
+                      title="Enregistrer manuellement une commande reçue par Email, WhatsApp ou Appel"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>+ Saisir commande</span>
+                    </button>
+
                     {/* Bouton flèche arrondie pour actualiser sans recharger toute la page */}
                     <button
                       type="button"
@@ -1117,14 +1343,33 @@ export default function AdminModal({
                   })}
                 </div>
               ) : (
-                <div className="text-center py-16 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-                  <ClipboardList className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-3">
+                  <ClipboardList className="w-12 h-12 text-slate-400 mx-auto" />
                   <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                    Aucune commande trouvée pour la période sélectionnée
+                    Aucune commande enregistrée sur cet appareil ({selectedMonth !== 'Tous' || selectedYear !== 'Toutes' || orderStatusFilter !== 'Tous' ? 'pour ces filtres' : 'actuellement'})
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Essayez de changer les filtres de mois ou d'année pour consulter d'autres périodes.
+                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Les commandes passées par vos clients sur leur smartphone arrivent directement par email sur <strong className="text-slate-700 dark:text-slate-300 font-mono">marketdzzoom@gmail.com</strong>.
                   </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualOrderModal(true)}
+                      className="px-4 py-2 bg-brand-orange hover:bg-orange-600 text-white rounded-xl text-xs font-black shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Saisir la commande reçue par Email</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRefreshOrders}
+                      disabled={isRefreshing}
+                      className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-brand-orange rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-brand-orange ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span>Actualiser</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2728,6 +2973,290 @@ export default function AdminModal({
 
         </div>
       </div>
+
+      {/* MODAL DE SAISIE MANUELLE DE COMMANDE */}
+      {showManualOrderModal && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto animate-scaleUp">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-slate-850 dark:to-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-brand-orange text-white rounded-2xl shadow-sm">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>Saisir une Commande Manuellement</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Enregistrez une commande reçue par Email, Téléphone ou WhatsApp
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManualOrderModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-white/60 dark:hover:bg-slate-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Success Toast */}
+            {manualOrderSuccess && (
+              <div className="m-4 p-3.5 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-2xl text-xs font-black flex items-center gap-2 animate-fadeIn">
+                <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>Commande enregistrée avec succès dans le tableau de bord !</span>
+              </div>
+            )}
+
+            {/* Quick Paste Assistant from Email */}
+            <div className="px-4 sm:px-5 pt-4">
+              <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/80 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-sky-950 dark:text-sky-200 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                    <span>Remplissage automatique depuis l'Email</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteBox(!showPasteBox)}
+                    className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline"
+                  >
+                    {showPasteBox ? 'Masquer' : 'Coller le texte de l\'email'}
+                  </button>
+                </div>
+                {showPasteBox && (
+                  <div className="space-y-2 pt-1">
+                    <textarea
+                      value={pasteInputText}
+                      onChange={(e) => setPasteInputText(e.target.value)}
+                      placeholder="Collez ici le texte de l'email reçu (Nom, Téléphone, Wilaya, UGG...)"
+                      rows={3}
+                      className="w-full p-2.5 text-xs bg-white dark:bg-slate-900 rounded-xl border border-sky-300 dark:border-sky-700 text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleParsePastedOrder}
+                        disabled={!pasteInputText.trim()}
+                        className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black shadow-xs active:scale-95 disabled:opacity-50 transition-all"
+                      >
+                        Extraire les champs
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Order Form */}
+            <form onSubmit={handleCreateManualOrder} className="p-4 sm:p-5 space-y-4 max-h-[62vh] overflow-y-auto">
+              
+              {/* Customer Info Section */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                  1. Coordonnées du Client
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Nom & Prénom <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={manualCustomerName}
+                      onChange={(e) => setManualCustomerName(e.target.value)}
+                      placeholder="Ex: Sarah Benali"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Téléphone <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={manualPhone}
+                      onChange={(e) => setManualPhone(e.target.value)}
+                      placeholder="05 / 06 / 07..."
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Wilaya de Livraison <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={manualWilaya}
+                      onChange={(e) => handleManualWilayaChange(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-medium"
+                    >
+                      {WILAYAS.map((w) => (
+                        <option key={w.code} value={w.name}>
+                          {w.name} ({w.fee} DA)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Commune / Adresse
+                    </label>
+                    <input
+                      type="text"
+                      value={manualAddress}
+                      onChange={(e) => setManualAddress(e.target.value)}
+                      placeholder="Ex: Cité 5 Juillet, Bâtiment B..."
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Section */}
+              <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                  2. Détails de l'Article
+                </span>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Article sélectionné
+                  </label>
+                  <select
+                    value={manualProduct}
+                    onChange={(e) => {
+                      const prodTitle = e.target.value;
+                      setManualProduct(prodTitle);
+                      const p = products.find((prod) => prod.title === prodTitle);
+                      if (p) setManualPrice(p.price);
+                    }}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.title}>
+                        {p.title} - {formatPrice(p.price)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Pointure
+                    </label>
+                    <input
+                      type="text"
+                      value={manualSize}
+                      onChange={(e) => setManualSize(e.target.value)}
+                      placeholder="38"
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Couleur
+                    </label>
+                    <input
+                      type="text"
+                      value={manualColor}
+                      onChange={(e) => setManualColor(e.target.value)}
+                      placeholder="Beige"
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Quantité
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={manualQuantity}
+                      onChange={(e) => setManualQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Statut
+                    </label>
+                    <select
+                      value={manualStatus}
+                      onChange={(e) => setManualStatus(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    >
+                      <option value="En attente">🟡 En attente</option>
+                      <option value="Validé">🔵 Validé</option>
+                      <option value="Livré">🟢 Livré</option>
+                      <option value="Annulé">🔴 Annulé</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Prix unitaire (DA)
+                    </label>
+                    <input
+                      type="number"
+                      value={manualPrice}
+                      onChange={(e) => setManualPrice(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Livraison (DA)
+                    </label>
+                    <input
+                      type="number"
+                      value={manualShipping}
+                      onChange={(e) => setManualShipping(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Summary */}
+              <div className="p-3.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-between font-black text-xs">
+                <span className="text-slate-700 dark:text-slate-300">Total Commande à la livraison :</span>
+                <span className="text-base text-brand-orange">
+                  {formatPrice(((Number(manualPrice) || 0) * (Number(manualQuantity) || 1)) + (Number(manualShipping) || 0))}
+                </span>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowManualOrderModal(false)}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-brand-orange hover:bg-orange-600 text-white rounded-xl text-xs font-black shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Enregistrer la commande</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

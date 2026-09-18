@@ -2,7 +2,8 @@ import { INITIAL_PRODUCTS } from '../data/initialProducts.js';
 import { 
   pushProductsToCloud, 
   pushSpecialOfferToCloud, 
-  pushOrdersToCloud 
+  pushOrdersToCloud,
+  pushSingleOrderToCloud
 } from './cloudSync.js';
 
 const PRODUCTS_KEY = 'zoom_market_products_v1';
@@ -192,7 +193,8 @@ export function addOrderToStorage(orderData) {
     ...orderData
   };
   const updated = [newOrder, ...currentOrders];
-  saveOrders(updated);
+  saveOrders(updated, false);
+  pushSingleOrderToCloud(newOrder);
   if (typeof window !== 'undefined') {
     try {
       window.dispatchEvent(new CustomEvent('zoom_market_order_created', { detail: newOrder }));

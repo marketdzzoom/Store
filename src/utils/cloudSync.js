@@ -317,6 +317,64 @@ export async function pushOrdersToCloud(orders) {
 }
 
 /**
+ * Push a single new order to Cloud using POST (appends without overwriting)
+ */
+export async function pushSingleOrderToCloud(newOrder) {
+  const config = getCloudConfig();
+  if (!config.enabled || !config.firebaseUrl) return false;
+
+  const url = normalizeFirebaseUrl(config.firebaseUrl);
+  const authParam = config.authSecret ? `?auth=${encodeURIComponent(config.authSecret)}` : '';
+  const endpoint = `${url}/zoom_market/orders.json${authParam}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOrder)
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('Error pushing single order to cloud:', e);
+    return false;
+  }
+}
+
+/**
+ * Fetch all orders from Cloud (supports both arrays and Firebase push-id objects)
+ */
+export async function fetchOrdersFromCloud() {
+  const config = getCloudConfig();
+  if (!config.enabled || !config.firebaseUrl) return null;
+
+  const url = normalizeFirebaseUrl(config.firebaseUrl);
+  const authParam = config.authSecret ? `?auth=${encodeURIComponent(config.authSecret)}` : '';
+  const endpoint = `${url}/zoom_market/orders.json${authParam}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (!data) return [];
+      if (Array.isArray(data)) return data;
+      // Convert Firebase key-value object to array
+      return Object.entries(data).map(([cloudKey, val]) => ({
+        ...val,
+        cloudId: cloudKey
+      })).reverse();
+    }
+    return null;
+  } catch (err) {
+    console.warn('Error fetching cloud orders:', err);
+    return null;
+  }
+}
+
+/**
  * Fetch entire cloud store state
  */
 export async function fetchCloudStore() {
