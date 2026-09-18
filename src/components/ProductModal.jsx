@@ -206,9 +206,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   return (
     <>
       {/* Main Product Quick View Modal / Full Mobile Landing Page */}
-      <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 sm:backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-3 md:p-6 bg-slate-950/80 sm:backdrop-blur-sm animate-fadeIn overflow-hidden">
         <div 
-          className="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] max-w-4xl rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
+          className="bg-white dark:bg-slate-900 w-full h-full md:h-[90vh] md:max-h-[860px] md:min-h-[580px] max-w-5xl rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Mobile & Desktop Navigation Bar */}
@@ -263,7 +263,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
           </div>
 
           {/* Left Image Section & Interactive Zoom Container (Fixed & balanced, zero empty void) */}
-          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 md:p-6 flex flex-col justify-between relative md:h-full shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
+          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 md:p-6 flex flex-col justify-between relative md:h-full md:min-h-0 shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
             {isOutOfStock ? (
               <span className="absolute top-4 left-4 z-10 bg-red-700 text-white text-xs font-extrabold px-3 py-1 rounded-lg uppercase tracking-wider shadow flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
@@ -277,14 +277,16 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )
             )}
 
-            {/* Main Interactive Zoomable Image Box */}
+            {/* Main Interactive Zoomable Image Box - Strictly Fixed Aspect Ratio to prevent any jumping */}
             <div 
               ref={imageRef}
               onMouseEnter={() => setIsHoveringZoom(true)}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
               onClick={() => setIsZoomModalOpen(true)}
-              className="flex-1 flex items-center justify-center py-2 relative cursor-zoom-in overflow-hidden rounded-2xl group min-h-[240px] sm:min-h-[280px] md:min-h-0"
+              className="w-full aspect-[4/5] sm:aspect-square md:aspect-auto md:flex-1 md:min-h-0 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner group cursor-zoom-in select-none"
             >
               {/* Photo Counter Pill Badge */}
               {imageList.length > 1 && (
@@ -311,7 +313,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 src={imgError ? fallbackImg : currentImage}
                 alt={titleText}
                 onError={() => setImgError(true)}
-                className={`max-h-64 sm:max-h-72 md:max-h-80 w-full object-contain rounded-2xl transition-transform duration-300 ${
+                className={`w-full h-full object-contain p-2 sm:p-4 transition-transform duration-300 ${
                   isHoveringZoom ? 'scale-125' : 'scale-100'
                 } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
                 style={
@@ -330,7 +332,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       e.stopPropagation();
                       handlePrevImage(e);
                     }}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-2 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-95 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 border border-slate-200 dark:border-slate-700"
                     title="Photo précédente"
                     aria-label="Photo précédente"
                   >
@@ -343,7 +345,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       e.stopPropagation();
                       handleNextImage(e);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-2 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-95 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 border border-slate-200 dark:border-slate-700"
                     title="Photo suivante"
                     aria-label="Photo suivante"
                   >
@@ -353,7 +355,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )}
 
               {/* Hover Zoom Prompt Badge */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[10px] font-bold px-3 py-0.5 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[10px] font-bold px-3 py-0.5 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
                 <ZoomIn className="w-3 h-3 text-brand-orange" />
                 <span>{t.zoomHint}</span>
               </div>
@@ -361,7 +363,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
             {/* Multiple Image Gallery Thumbnails */}
             {imageList.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar shrink-0 px-1 py-1">
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
@@ -373,9 +375,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                         setVariantError('');
                       }
                     }}
-                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 active:scale-95 ${
                       selectedImageIndex === idx
-                        ? 'border-brand-orange shadow-md scale-105'
+                        ? 'border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/30'
                         : 'border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -387,9 +389,9 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
           </div>
 
           {/* Right Info Section with independent scroll on desktop & unified single-scroll on mobile */}
-          <div className="md:w-1/2 flex flex-col md:h-full md:overflow-hidden relative bg-white dark:bg-slate-900">
-            {/* Details pane: smooth single-scroll on mobile with pb-28 to clear fixed bottom bar */}
-            <div className="flex-1 md:overflow-y-auto p-4 sm:p-6 md:p-7 space-y-4 pb-28 md:pb-4">
+          <div className="md:w-1/2 flex flex-col md:h-full md:min-h-0 md:overflow-hidden relative bg-white dark:bg-slate-900">
+            {/* Details pane: smooth single-scroll on mobile with pb-28 to clear fixed bottom bar, and active desktop scrollbar */}
+            <div className="flex-1 md:min-h-0 md:overflow-y-auto p-4 sm:p-6 md:p-7 space-y-4 pb-28 md:pb-4 custom-scrollbar">
               {/* Category & Rating */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-brand-orange uppercase tracking-wider">
@@ -538,6 +540,20 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       <span>{variantError}</span>
                     </div>
                   )}
+
+                  {/* Instant Direct Buy Button right below variants */}
+                  {!isOutOfStock && (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={handleBuy}
+                        className="w-full py-3.5 px-5 rounded-2xl font-black text-sm text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-xl shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-2 ring-2 ring-brand-orange/20 transition-all cursor-pointer"
+                      >
+                        <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
+                        <span>{lang === 'ar' ? 'شراء الآن ⚡ (تأكيد فوري)' : 'Acheter direct ⚡ (Commande Immédiate)'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -629,13 +645,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )}
             </div>
 
-            {/* Desktop Sticky Action CTAs Footer */}
-            <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2 shrink-0">
+            {/* Desktop Sticky Action CTAs Footer - Always pinned and visible */}
+            <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2 shrink-0 z-20">
               <div className="flex gap-2.5">
                 <button
+                  type="button"
                   onClick={handleAdd}
                   disabled={isOutOfStock}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 cursor-pointer ${
                     isOutOfStock
                       ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none'
                       : added
@@ -648,16 +665,17 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleBuy}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-3 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white ${
+                  className={`flex-1 py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer ${
                     isOutOfStock
                       ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
                       : 'bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 hover:shadow-glow ring-2 ring-brand-orange/20'
                   }`}
                 >
                   <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-pulse" />
-                  <span>{t.buyNow || 'Acheter maintenant'}</span>
+                  <span>{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
                 </button>
               </div>
 
