@@ -10,7 +10,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v5-ugg-hd-5photos';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v6-ugg-8photos';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -58,12 +58,15 @@ Paiement : À la réception après vérification de votre commande 🤝
     "./products/ugg-2.jpg",
     "./products/ugg-3.jpg",
     "./products/ugg-4.jpg",
-    "./products/ugg-5.jpg"
+    "./products/ugg-5.jpg",
+    "./products/ugg-6.jpg",
+    "./products/ugg-7.jpg",
+    "./products/ugg-8.jpg"
   ],
   colors: ["Beige", "Marron", "Noir"],
   colorImageMap: {
     "Beige": 0,
-    "Marron": 0,
+    "Marron": 6,
     "Noir": 3
   },
   productId: "prod-ugg",

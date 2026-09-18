@@ -48,12 +48,15 @@ Paiement : À la réception après vérification de votre commande 🤝
       "./products/ugg-2.jpg",
       "./products/ugg-3.jpg",
       "./products/ugg-4.jpg",
-      "./products/ugg-5.jpg"
+      "./products/ugg-5.jpg",
+      "./products/ugg-6.jpg",
+      "./products/ugg-7.jpg",
+      "./products/ugg-8.jpg"
     ],
     colors: ["Beige", "Marron", "Noir"],
     colorImageMap: {
       "Beige": 0,
-      "Marron": 0,
+      "Marron": 6,
       "Noir": 3
     },
     sizes: ["37", "38", "39", "40"],
