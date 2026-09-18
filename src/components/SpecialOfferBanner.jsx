@@ -326,7 +326,7 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
               className="w-full sm:w-auto bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 px-6 rounded-2xl font-extrabold text-sm shadow-xl hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" />
-              <span>{lang === 'ar' ? 'اطلب الآن - حذاء UGG ⚡' : 'Commander Chaussures UGG ⚡'}</span>
+              <span>{lang === 'ar' ? 'اطلب الآن - حذاء UGG' : 'Commander Chaussures UGG'}</span>
             </button>
 
             <button
@@ -335,7 +335,7 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
               className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3.5 px-5 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
             >
               <Eye className="w-4 h-4 text-brand-orange" />
-              <span>{lang === 'ar' ? 'معاينة الـ 8 صور والخصائص 👁️' : 'Voir les 8 Photos HD & Détails 👁️'}</span>
+              <span>{lang === 'ar' ? 'معاينة الـ 8 صور والخصائص' : 'Voir les 8 Photos HD & Détails'}</span>
             </button>
           </div>
         </div>

@@ -426,55 +426,19 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 )}
               </div>
 
-              {/* Product Specificities & Variants: Sizes & Colors */}
-              {!isOutOfStock && (product.sizes?.length > 0 || product.colors?.length > 0) && (
-                <div className="space-y-3 pt-1">
-                  {/* Sizes / Pointures Selection */}
-                  {product.sizes && product.sizes.length > 0 && (
-                    <div 
-                      ref={sizeSelectorRef}
-                      className={`p-3.5 rounded-2xl border transition-all ${
-                        variantError && !selectedSize
-                          ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-400/50'
-                          : 'bg-slate-50 dark:bg-slate-850 border-slate-200/80 dark:border-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          <span>👟</span>
-                          <span>{t.selectSize || (lang === 'ar' ? 'المقاس / الحجم :' : 'Pointure / Taille :')}</span>
-                        </span>
-                        {selectedSize && (
-                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/30">
-                            Pointure {selectedSize}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {product.sizes.map((sz) => {
-                          const isSelected = selectedSize === sz;
-                          return (
-                            <button
-                              key={sz}
-                              type="button"
-                              onClick={() => {
-                                setSelectedSize(sz);
-                                setVariantError('');
-                              }}
-                              className={`min-w-[50px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-black border transition-all duration-150 active:scale-95 ${
-                                isSelected
-                                  ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/30'
-                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
-                              }`}
-                            >
-                              {sz}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+              {/* Structured & Impactful Description (Shown First) */}
+              <div>
+                <ProductDescription 
+                  description={descText} 
+                  lang={lang} 
+                  showPhoneCTA={true} 
+                  showTrustCards={false} 
+                />
+              </div>
 
+              {/* Product Variants: Colors First, then Pointures */}
+              {!isOutOfStock && (product.colors?.length > 0 || product.sizes?.length > 0) && (
+                <div className="space-y-3 pt-1">
                   {/* Colors Selection */}
                   {product.colors && product.colors.length > 0 && (
                     <div className="bg-slate-50 dark:bg-slate-850 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
@@ -534,6 +498,52 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                     </div>
                   )}
 
+                  {/* Sizes / Pointures Selection */}
+                  {product.sizes && product.sizes.length > 0 && (
+                    <div 
+                      ref={sizeSelectorRef}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        variantError && !selectedSize
+                          ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-400/50'
+                          : 'bg-slate-50 dark:bg-slate-850 border-slate-200/80 dark:border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <span>👟</span>
+                          <span>{t.selectSize || (lang === 'ar' ? 'المقاس / الحجم :' : 'Pointure / Taille :')}</span>
+                        </span>
+                        {selectedSize && (
+                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/30">
+                            Pointure {selectedSize}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {product.sizes.map((sz) => {
+                          const isSelected = selectedSize === sz;
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSize(sz);
+                                setVariantError('');
+                              }}
+                              className={`min-w-[50px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-black border transition-all duration-150 active:scale-95 ${
+                                isSelected
+                                  ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/30'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
+                              }`}
+                            >
+                              {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {variantError && (
                     <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-700 dark:text-rose-300 font-bold flex items-center gap-2 animate-fadeIn">
                       <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
@@ -543,7 +553,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </div>
               )}
 
-              {/* Algerian Fast COD Assurances & Stock Bar */}
+              {/* Professional Assurances & Stock Bar */}
               <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap text-xs">
                 {isOutOfStock ? (
                   <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
@@ -553,7 +563,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 ) : (
                   <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t.inStock} ({product.stockQuantity ?? 100})</span>
+                    <span>{lang === 'ar' ? 'الكمية متوفرة' : 'Quantité disponible'}</span>
                   </div>
                 )}
 
@@ -566,16 +576,6 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                   <ShieldCheck className="w-3.5 h-3.5 text-brand-navy dark:text-sky-400 shrink-0" />
                   <span>{lang === 'ar' ? 'دفع عند الاستلام' : 'Paiement à la livraison'}</span>
                 </div>
-              </div>
-
-              {/* Structured & Impactful Description */}
-              <div>
-                <ProductDescription 
-                  description={descText} 
-                  lang={lang} 
-                  showPhoneCTA={true} 
-                  showTrustCards={false} 
-                />
               </div>
 
               {/* Direct Customer Service & WhatsApp Order Assistance Banner */}
@@ -673,8 +673,8 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       : 'bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 hover:shadow-glow ring-2 ring-brand-orange/20'
                   }`}
                 >
-                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-pulse" />
-                  <span className="font-black tracking-wide">{lang === 'ar' ? 'طلب فوري ⚡' : 'Commander Maintenant ⚡'}</span>
+                  <Zap className="w-4 h-4 fill-current text-white shrink-0" />
+                  <span className="font-black tracking-wide">{lang === 'ar' ? 'طلب فوري' : 'Commander Maintenant'}</span>
                 </button>
               </div>
 
@@ -735,8 +735,8 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 disabled={isOutOfStock}
                 className="flex-1 max-w-[210px] py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-1.5 ring-2 ring-brand-orange/20 cursor-pointer"
               >
-                <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
-                <span className="truncate">{lang === 'ar' ? 'اطلب الآن ⚡' : 'Commander ⚡'}</span>
+                <Zap className="w-4 h-4 fill-white shrink-0" />
+                <span className="truncate">{lang === 'ar' ? 'اطلب الآن' : 'Commander'}</span>
               </button>
             </div>
           </div>

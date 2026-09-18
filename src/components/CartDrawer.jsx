@@ -261,7 +261,7 @@ export default function CartDrawer({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-black text-base sm:text-lg leading-tight">
-                  {t.expressCheckout || 'Finaliser ma Commande Express ⚡'}
+                  {t.expressCheckout || 'Finaliser ma Commande Express'}
                 </h2>
                 <span className="hidden sm:inline-block bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/40">
                   {lang === 'ar' ? 'خطوة واحدة فقط' : '1 seule étape'}
