@@ -2,52 +2,59 @@ export const INITIAL_PRODUCTS = [
   {
     id: "prod-ugg",
     title: "Chaussures UGG",
-    titleAr: "أحذية يو جي جي نسائية - أناقة وراحة فائقة",
+    titleAr: "حذاء UGG نسائي أنيق وعصري",
     price: 5900,
     oldPrice: 7375,
-    category: "High-Tech",
+    category: "Mode & Habillement",
     badge: "Offre Spéciale",
     description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨
 
 L'alliance parfaite entre bien-être absolu, chaleur et style tendance pour votre quotidien.
 
-✨ Conception orthopédique : Semelle ergonomique ultra-confortable, idéale pour la marche et un usage quotidien sans fatigue.
-Pointures : Du 37 au 40
+Conception orthopédique : Semelle ergonomique ultra-confortable, idéale pour la marche et un usage quotidien sans fatigue.
 
 Couleurs disponibles :
 - 🤍 Beige
 - 🤎 Marron
 - 🖤 Noir
 
+Pointures : Du 37 au 40
+
 Livraison : Rapide et disponible directement à domicile 🚚
+
 Paiement : À la réception après vérification de votre commande 🤝
-Pour commander ou pour toute information : 0663 08 50 69`,
-    descriptionAr: `✨ أحذية يو جي جي نسائية - أناقة وراحة عصرية فائقة ✨
 
-الجمع المثالي بين الراحة المطلقة، الدفء والأناقة ليومياتك.
+📞 Pour commander ou pour toute information :
+0663 08 50 69`,
+    descriptionAr: `✨ حذاء UGG نسائي أنيق وعصري ✨
 
-✨ تصميم مريح للقدمين مع نعل طبي يخفف الضغط أثناء المشي والاستعمال اليومي.
-المقاسات المتوفرة: من 37 إلى 40
+يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
 
-الألوان المتوفرة:
-- 🤍 بيج (Beige)
-- 🤎 بني (Marron)
-- 🖤 أسود (Noir)
+تصميم طبي (Orthopédique): نعل مريح ومثالي للمشي والاستعمال اليومي دون تعب.
 
-🚚 توصيل سريع لجميع الولايات مع الدفع عند الاستلام بعد معاينة الطلب 🤝
-للتواصل أو الاستفسار: 0663 08 50 69`,
-    image: "./products/ugg-beige.jpg",
+• الألوان المتوفرة :
+🤍 بيج (Beige)
+🤎 بني (Marron)
+🖤 أسود (Noir)
+
+• المقاسات المتوفرة : من 37 إلى 40
+• التوصيل : متوفر وسريع حتى باب المنزل 🚚
+• الدفع : عند الاستلام بعد معاينة المنتج 🤝
+
+📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0663085069`,
+    image: "./products/ugg-1.jpg",
     images: [
-      "./products/ugg-beige.jpg",
-      "./products/ugg-black.jpg",
-      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80"
+      "./products/ugg-1.jpg",
+      "./products/ugg-2.jpg",
+      "./products/ugg-3.jpg",
+      "./products/ugg-4.jpg",
+      "./products/ugg-5.jpg"
     ],
     colors: ["Beige", "Marron", "Noir"],
     colorImageMap: {
       "Beige": 0,
-      "Noir": 1,
-      "Marron": 0
+      "Marron": 0,
+      "Noir": 3
     },
     sizes: ["37", "38", "39", "40"],
     inStock: true,
