@@ -10,7 +10,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v7-mobile-landing-phone';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v8-emailjs-keys';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -20,7 +20,7 @@ export const DEFAULT_SPECIAL_OFFER = {
   title: "Chaussures UGG",
   titleAr: "حذاء UGG نسائي أنيق وعصري",
   price: 5900,
-  oldPrice: 7375,
+  oldPrice: 7500,
   category: "Mode & Habillement",
   description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨
 
@@ -212,9 +212,9 @@ export function deleteOrderFromStorage(orderId) {
 
 // Default EmailJS Configuration
 export const DEFAULT_EMAIL_CONFIG = {
-  serviceId: '',
-  templateId: '',
-  publicKey: '',
+  serviceId: 'service_qimlkf2',
+  templateId: 'template_8kqlxnb',
+  publicKey: 'm2KUiibksRpDB6DOG',
   recipientEmail: 'marketdzzoom@gmail.com',
   storePhone: '+213663085069',
   formspreeEndpoint: ''
@@ -225,12 +225,21 @@ export function getStoredEmailConfig() {
     const data = localStorage.getItem(EMAIL_CONFIG_KEY);
     if (data) {
       const parsed = JSON.parse(data);
-      // Auto-migrate if stored phone was previous default dummy 0550000000 or empty
-      if (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00') {
-        parsed.storePhone = '+213663085069';
-        localStorage.setItem(EMAIL_CONFIG_KEY, JSON.stringify(parsed));
+      const merged = {
+        serviceId: parsed.serviceId?.trim() || DEFAULT_EMAIL_CONFIG.serviceId,
+        templateId: parsed.templateId?.trim() || DEFAULT_EMAIL_CONFIG.templateId,
+        publicKey: parsed.publicKey?.trim() || DEFAULT_EMAIL_CONFIG.publicKey,
+        recipientEmail: parsed.recipientEmail?.trim() || DEFAULT_EMAIL_CONFIG.recipientEmail,
+        storePhone: (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00')
+          ? DEFAULT_EMAIL_CONFIG.storePhone
+          : parsed.storePhone,
+        formspreeEndpoint: parsed.formspreeEndpoint || DEFAULT_EMAIL_CONFIG.formspreeEndpoint
+      };
+      // Auto-save migrated config to prevent empty keys on mobile or laptop
+      if (!parsed.serviceId || !parsed.publicKey || !parsed.templateId || parsed.storePhone === '0550000000') {
+        localStorage.setItem(EMAIL_CONFIG_KEY, JSON.stringify(merged));
       }
-      return { ...DEFAULT_EMAIL_CONFIG, ...parsed };
+      return merged;
     }
   } catch (e) {
     console.error('Error reading email config from localStorage:', e);

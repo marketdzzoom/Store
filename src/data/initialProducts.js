@@ -4,7 +4,7 @@ export const INITIAL_PRODUCTS = [
     title: "Chaussures UGG",
     titleAr: "حذاء UGG نسائي أنيق وعصري",
     price: 5900,
-    oldPrice: 7375,
+    oldPrice: 7500,
     category: "Mode & Habillement",
     badge: "Offre Spéciale",
     description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨

@@ -210,8 +210,24 @@ export default function CartDrawer({
     addOrderToStorage(orderData);
     recordOrderTimestamp();
 
+    // Send email notification to store email (EmailJS) on WhatsApp order as well
+    sendOrderNotification({ orderData, emailConfig }).catch((err) => {
+      console.warn('Background email dispatch error on WhatsApp order:', err);
+    });
+
     const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone);
     window.open(waUrl, '_blank');
+
+    onOrderSuccess({
+      orderData,
+      whatsappUrl: waUrl
+    });
+
+    setFullName('');
+    setPhone('');
+    setAddress('');
+    setNotes('');
+    setErrors({});
   };
 
   // Real-time Algerian carrier detection & phone validity
