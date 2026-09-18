@@ -138,19 +138,31 @@ export default function App() {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
-        setIsAdminLoginOpen(true);
+        if (sessionStorage.getItem('zoom_market_admin_session') === 'true') {
+          setIsAdminOpen(true);
+        } else {
+          setIsAdminLoginOpen(true);
+        }
       }
     };
     const handleHashChange = () => {
       if (window.location.hash === '#admin') {
-        setIsAdminLoginOpen(true);
+        if (sessionStorage.getItem('zoom_market_admin_session') === 'true') {
+          setIsAdminOpen(true);
+        } else {
+          setIsAdminLoginOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('hashchange', handleHashChange);
     if (window.location.hash === '#admin') {
-      setIsAdminLoginOpen(true);
+      if (sessionStorage.getItem('zoom_market_admin_session') === 'true') {
+        setIsAdminOpen(true);
+      } else {
+        setIsAdminLoginOpen(true);
+      }
     }
 
     return () => {
@@ -705,6 +717,9 @@ export default function App() {
         storePhone={emailConfig.storePhone}
         lang={lang}
         isSingleProduct={!products || products.length <= 1}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        isAdminLoggedIn={isAdminLoggedIn}
       />
 
       {/* Admin Security PIN Login Modal */}

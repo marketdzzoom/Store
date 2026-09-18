@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Lock, Key, ShieldCheck, AlertCircle, Check, Clock, ShieldAlert, Eye, EyeOff } from 'lucide-react';
-import { verifyAdminPin, changeAdminPin, getLockoutStatus } from '../utils/auth';
+import { verifyAdminPin, changeAdminPin, getLockoutStatus, clearLockoutStatus } from '../utils/auth';
 import { verifyAdminGeoLocation } from '../utils/geoSecurity';
 
 export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
@@ -137,7 +137,7 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/75 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-brand-navy/75 backdrop-blur-md animate-fadeIn">
       <div 
         className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 text-center relative p-6 sm:p-8 animate-scaleUp"
         onClick={(e) => e.stopPropagation()}
@@ -151,11 +151,11 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
         {/* Lock Icon */}
         <div className={`w-16 h-16 ${
-          !isAuthorized || lockoutInfo.isLocked
+          !isAuthorized
             ? 'bg-red-500/10 text-red-500 border-red-500/30'
             : 'bg-brand-orange/10 text-brand-orange border-brand-orange/20'
         } rounded-full flex items-center justify-center mx-auto mb-4 border-2 shadow-inner`}>
-          {!isAuthorized || lockoutInfo.isLocked ? <ShieldAlert className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
+          {!isAuthorized ? <ShieldAlert className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
         </div>
 
         <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1">
@@ -173,16 +173,29 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
           </div>
         )}
 
-        {/* Lockout Warning Banner */}
+        {/* Lockout Warning Banner with Reset Button */}
         {lockoutInfo.isLocked && isAuthorized && (
-          <div className="mb-4 p-3.5 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 rounded-2xl text-xs font-bold border border-red-200 dark:border-red-900 flex items-center gap-2.5 text-left">
-            <Clock className="w-5 h-5 flex-shrink-0 text-red-600" />
-            <div>
-              <p className="font-extrabold">Accès temporairement verrouillé</p>
-              <p className="text-[11px] font-normal mt-0.5">
-                Veuillez patienter : <strong>{lockoutInfo.remainingMinutes} min</strong>
-              </p>
+          <div className="mb-4 p-3.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-2xl text-xs font-bold border border-amber-200 dark:border-amber-900 flex items-center justify-between gap-2.5 text-left">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 flex-shrink-0 text-amber-600" />
+              <div>
+                <p className="font-extrabold">Tentatives épuisées ({lockoutInfo.remainingMinutes} min)</p>
+                <p className="text-[11px] font-normal mt-0.5">
+                  Saisissez votre code PIN valide pour débloquer immédiatement.
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearLockoutStatus();
+                setLockoutInfo(getLockoutStatus());
+                setError('');
+              }}
+              className="px-2.5 py-1 text-[11px] font-extrabold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 rounded-lg hover:bg-amber-300 transition-colors shrink-0"
+            >
+              Débloquer
+            </button>
           </div>
         )}
 
@@ -209,7 +222,7 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
               <div className="relative">
                 <input
                   type={showPin ? "text" : "password"}
-                  disabled={!isAuthorized || lockoutInfo.isLocked || isVerifying || isCheckingSecurity}
+                  disabled={!isAuthorized || isVerifying || isCheckingSecurity}
                   value={pin}
                   onChange={(e) => { setPin(e.target.value); setError(''); }}
                   placeholder="••••••••"
@@ -234,8 +247,8 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
             <button
               type="submit"
-              disabled={!isAuthorized || lockoutInfo.isLocked || isVerifying || isCheckingSecurity}
-              className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!isAuthorized || isVerifying || isCheckingSecurity || !pin.trim()}
+              className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {isVerifying ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

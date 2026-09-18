@@ -34,7 +34,10 @@ export default function ProductModal({
   onBuyNow, 
   storePhone, 
   lang = 'fr',
-  isSingleProduct = true 
+  isSingleProduct = true,
+  onOpenAdminLogin,
+  onOpenAdmin,
+  isAdminLoggedIn = false
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -317,6 +320,21 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                 aria-label="Partager le lien"
               >
                 {copiedLink ? <CheckCheck className="w-4 h-4 text-white" /> : <Share2 className="w-4 h-4 text-brand-orange" />}
+              </button>
+
+              {/* Admin Panel Access Button */}
+              <button
+                type="button"
+                onClick={isAdminLoggedIn ? onOpenAdmin : onOpenAdminLogin}
+                className={`p-1.5 sm:p-2 rounded-full transition-all flex items-center justify-center active:scale-95 shadow-md backdrop-blur-md border ${
+                  isAdminLoggedIn
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30'
+                    : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:text-brand-orange dark:hover:text-brand-orange border-slate-200/80 dark:border-slate-700'
+                }`}
+                title={isAdminLoggedIn ? (lang === 'ar' ? 'لوحة التحكم (متصل) 🛡️' : 'Espace Administrateur (Connecté) 🛡️') : (lang === 'ar' ? 'دخول المشرف (Admin) 🔒' : 'Espace Administrateur 🔒')}
+                aria-label="Espace Administrateur"
+              >
+                <ShieldCheck className={`w-4 h-4 ${isAdminLoggedIn ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`} />
               </button>
 
               {!isSingleProduct && (
@@ -698,6 +716,20 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                   </div>
                 </div>
               )}
+
+              {/* Discreet Admin Footer Link */}
+              <div className="pt-4 mt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+                <span>Zoom Market Dz © {new Date().getFullYear()}</span>
+                <button
+                  type="button"
+                  onClick={isAdminLoggedIn ? onOpenAdmin : onOpenAdminLogin}
+                  className="hover:text-brand-orange text-slate-400 dark:text-slate-500 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
+                  title="Accès Administrateur"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>{isAdminLoggedIn ? (lang === 'ar' ? 'لوحة التحكم (متصل)' : 'Admin (Connecté)') : (lang === 'ar' ? 'دخول المشرف 🔒' : 'Espace Admin 🔒')}</span>
+                </button>
+              </div>
             </div>
 
             {/* Desktop Sticky Action CTAs Footer - Always pinned and visible with Professional Guarantee Bar */}

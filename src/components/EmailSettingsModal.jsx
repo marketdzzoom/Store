@@ -69,7 +69,7 @@ export default function EmailSettingsModal({ isOpen, onClose, emailConfig, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-brand-navy/60 backdrop-blur-sm animate-fadeIn">
       <div 
         className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col"
         onClick={(e) => e.stopPropagation()}
