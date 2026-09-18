@@ -54,7 +54,7 @@ export default function ProductModal({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const activePhone = (storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00') ? storePhone : '+213663085069';
-  const phoneDisplay = activePhone.includes('663') ? '0663 08 50 69' : formatDZPhoneDisplay(activePhone);
+  const phoneDisplay = formatDZPhoneDisplay(activePhone.includes('663') ? '0663085069' : activePhone);
   const sizeSelectorRef = useRef(null);
 
   const handleCopyProductLink = (e) => {
@@ -287,11 +287,14 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
             <div className="flex items-center gap-1.5 sm:gap-2">
               <a
                 href={`tel:${activePhone.replace(/[\s\.-]/g, '')}`}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 flex items-center gap-1.5 active:scale-95 shadow-xs"
+                dir="ltr"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 flex items-center gap-1.5 active:scale-95 shadow-xs [direction:ltr]"
                 title="Appeler le service client"
               >
-                <PhoneCall className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-[11px] font-extrabold">{phoneDisplay}</span>
+                <PhoneCall className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-[11px] font-extrabold tracking-wide [direction:ltr] [unicode-bidi:isolate]" dir="ltr">
+                  <bdi dir="ltr">{phoneDisplay}</bdi>
+                </span>
               </a>
 
               <button
@@ -663,10 +666,13 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                 <div className="grid grid-cols-2 gap-2">
                   <a
                     href={`tel:${activePhone.replace(/[\s\.-]/g, '')}`}
-                    className="py-2.5 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:border-brand-orange flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95"
+                    dir="ltr"
+                    className="py-2.5 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:border-brand-orange flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 [direction:ltr]"
                   >
-                    <Phone className="w-3.5 h-3.5 text-brand-orange" />
-                    <span className="truncate">{phoneDisplay}</span>
+                    <Phone className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                    <span className="truncate [direction:ltr] [unicode-bidi:isolate]" dir="ltr">
+                      <bdi dir="ltr">{phoneDisplay}</bdi>
+                    </span>
                   </a>
                   <button
                     type="button"

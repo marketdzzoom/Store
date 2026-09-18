@@ -229,15 +229,16 @@ function renderFormattedTextWithLinks(text, isDark = false) {
       <a 
         key={`phone-${idx}`} 
         href={`tel:${telLink}`}
+        dir="ltr"
         className={
           isDark
-            ? "font-extrabold text-amber-300 underline hover:text-amber-200 tracking-wider transition-colors inline-flex items-center gap-1"
-            : "font-extrabold text-brand-orange underline hover:text-brand-orange-hover tracking-wider transition-colors inline-flex items-center gap-1"
+            ? "font-extrabold text-amber-300 underline hover:text-amber-200 tracking-wider transition-colors inline-flex items-center gap-1 [direction:ltr]"
+            : "font-extrabold text-brand-orange underline hover:text-brand-orange-hover tracking-wider transition-colors inline-flex items-center gap-1 [direction:ltr]"
         }
         title="Appeler directement ce numéro"
       >
         <span>📞</span>
-        <span>{phoneStr}</span>
+        <bdi dir="ltr" className="[direction:ltr] [unicode-bidi:isolate] font-mono tracking-wide">{phoneStr}</bdi>
       </a>
     );
 
