@@ -125,6 +125,7 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
 
   const imageRef = useRef(null);
   const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
 
@@ -138,6 +139,7 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
   const handlePrevImage = (e) => {
     e?.stopPropagation?.();
     setZoomLevel(1);
+    setIsHoveringZoom(false);
     setImgError(false);
     if (imageList.length > 0) {
       setSelectedImageIndex((prev) => {
@@ -152,6 +154,7 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
   const handleNextImage = (e) => {
     e?.stopPropagation?.();
     setZoomLevel(1);
+    setIsHoveringZoom(false);
     setImgError(false);
     if (imageList.length > 0) {
       setSelectedImageIndex((prev) => {
@@ -164,18 +167,23 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
   };
 
   const handleTouchStart = (e) => {
+    setIsHoveringZoom(false);
     if (e.touches && e.touches[0]) {
       touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
     }
   };
 
   const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return;
+    setIsHoveringZoom(false);
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
     if (e.changedTouches && e.changedTouches[0]) {
       const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchStartXRef.current - touchEndX;
-      if (Math.abs(diff) > 40) {
-        if (diff > 0) {
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffX = touchStartXRef.current - touchEndX;
+      const diffY = touchStartYRef.current - touchEndY;
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+        if (diffX > 0) {
           handleNextImage();
         } else {
           handlePrevImage();
@@ -183,6 +191,7 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
       }
     }
     touchStartXRef.current = null;
+    touchStartYRef.current = null;
   };
 
   useEffect(() => {
@@ -223,7 +232,16 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
   const descText = (lang === 'ar' && product.descriptionAr) ? product.descriptionAr : product.description;
   const categoryLabel = (lang === 'ar' && CATEGORY_MAP_AR[product.category]) ? CATEGORY_MAP_AR[product.category] : product.category;
 
+  const handleMouseEnter = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      setIsHoveringZoom(true);
+    }
+  };
+
   const handleMouseMove = (e) => {
+    if (typeof window !== 'undefined' && !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      return;
+    }
     if (!imageRef.current) return;
     const { left, top, width, height } = imageRef.current.getBoundingClientRect();
     const x = ((e.clientX - left) / width) * 100;
@@ -354,20 +372,20 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
               )
             )}
 
-            {/* Main Interactive Zoomable Image Box - Harmonized Size & Centered Positioning like Laptop */}
+            {/* Main Interactive Zoomable Image Box - Stable Fixed Frame & Sightly Larger Clear View */}
             <div 
               ref={imageRef}
-              onMouseEnter={() => setIsHoveringZoom(true)}
+              onMouseEnter={handleMouseEnter}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onClick={() => setIsZoomModalOpen(true)}
-              className="w-full h-72 sm:h-80 md:h-full md:flex-1 md:min-h-0 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner group cursor-zoom-in select-none"
+              className="w-full h-[330px] sm:h-[370px] md:h-full md:flex-1 md:min-h-0 relative flex items-center justify-center overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner group cursor-zoom-in select-none"
             >
               {/* Photo Counter Pill Badge */}
               {imageList.length > 1 && (
-                <div className="absolute top-3 left-3 z-20 bg-brand-navy/85 text-white text-[11px] font-mono font-black px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 shadow-md">
+                <div className="absolute top-3 left-3 z-20 bg-brand-navy/85 text-white text-[11px] font-mono font-black px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 shadow-md pointer-events-none">
                   <span>📸</span>
                   <span>{selectedImageIndex + 1} / {imageList.length}</span>
                 </div>
@@ -379,26 +397,30 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                 if (!activeCol) return null;
                 const cStyle = getColorStyle(activeCol);
                 return (
-                  <div className="absolute top-3 right-3 z-20 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5 shadow border border-slate-200 dark:border-slate-700">
+                  <div className="absolute top-3 right-3 z-20 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5 shadow border border-slate-200 dark:border-slate-700 pointer-events-none">
                     <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: cStyle.background }} />
                     <span>{activeCol}</span>
                   </div>
                 );
               })()}
 
-              <img
-                src={imgError ? fallbackImg : currentImage}
-                alt={titleText}
-                onError={() => setImgError(true)}
-                className={`w-full h-full max-h-72 sm:max-h-80 md:max-h-none object-contain p-2 sm:p-4 transition-transform duration-300 ${
-                  isHoveringZoom ? 'scale-125' : 'scale-100'
-                } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
-                style={
-                  isHoveringZoom
-                    ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` }
-                    : { transformOrigin: 'center center' }
-                }
-              />
+              {/* Stable Centered Image Stage (Fixed dimensions, zero shift) */}
+              <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+                <img
+                  key={currentImage}
+                  src={imgError ? fallbackImg : currentImage}
+                  alt={titleText}
+                  onError={() => setImgError(true)}
+                  className={`max-w-full max-h-full w-auto h-auto object-contain select-none pointer-events-none drop-shadow-sm animate-fadeIn ${
+                    isHoveringZoom ? 'scale-125 transition-transform duration-200' : 'scale-100'
+                  } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
+                  style={
+                    isHoveringZoom
+                      ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` }
+                      : { transformOrigin: 'center center' }
+                  }
+                />
+              </div>
 
               {/* Prev / Next photo navigation arrows on modal preview */}
               {imageList.length > 1 && (
@@ -431,8 +453,24 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                 </>
               )}
 
-              {/* Hover Zoom Prompt Badge */}
-              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[10px] font-bold px-3 py-0.5 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-md pointer-events-none">
+              {/* Dot Indicators for Mobile Carousel */}
+              {imageList.length > 1 && (
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-slate-900/60 backdrop-blur-md pointer-events-none sm:hidden">
+                  {imageList.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`rounded-full transition-all duration-300 ${
+                        selectedImageIndex === idx
+                          ? 'w-4 h-1.5 bg-brand-orange shadow-sm'
+                          : 'w-1.5 h-1.5 bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Hover Zoom Prompt Badge on Desktop */}
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-brand-navy/80 text-white text-[10px] font-bold px-3 py-0.5 rounded-full backdrop-blur-md opacity-80 group-hover:opacity-100 transition-opacity hidden sm:flex items-center gap-1.5 shadow-md pointer-events-none">
                 <ZoomIn className="w-3 h-3 text-brand-orange" />
                 <span>{t.zoomHint}</span>
               </div>
@@ -440,11 +478,13 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
 
             {/* Multiple Image Gallery Thumbnails */}
             {imageList.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar shrink-0 px-1 py-1">
+              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-center gap-2.5 overflow-x-auto no-scrollbar shrink-0 px-1 py-1">
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelectedImageIndex(idx);
                       const matchedColor = getColorForImageIndex(idx, product);
                       if (matchedColor) {
@@ -452,13 +492,13 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
                         setVariantError('');
                       }
                     }}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 active:scale-95 ${
+                    className={`w-13 h-13 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 active:scale-95 bg-white dark:bg-slate-900 p-0.5 ${
                       selectedImageIndex === idx
                         ? 'border-brand-orange shadow-md scale-105 ring-2 ring-brand-orange/30'
                         : 'border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`Vue ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`Vue ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
                   </button>
                 ))}
               </div>
