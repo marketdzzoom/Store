@@ -237,7 +237,7 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-brand-navy/70 backdrop-blur-md overflow-hidden animate-fadeIn">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-brand-navy/70 backdrop-blur-md overflow-hidden animate-fadeIn">
       {/* Backdrop overlay */}
       <div 
         className="absolute inset-0" 

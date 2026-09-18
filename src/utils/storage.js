@@ -10,7 +10,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v12-ar-default-ugg-exclusive';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v13-ugg-impact';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -42,7 +42,7 @@ Paiement : À la réception après vérification de votre commande 🤝
 
 يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
 
-تصميم طبي (Orthopédique): نعل مريح ومثالي للمشي والاستعمال اليومي دون تعب.
+تصميم UGG طبي أصلي (Orthopédique): حذاء مريح جداً ومثالي للمشي والاستعمال اليومي مع راحة تامة للقدمين دون أي تعب.
 
 • الألوان المتوفرة :
 🤍 بيج (Beige)

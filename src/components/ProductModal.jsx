@@ -43,9 +43,13 @@ export default function ProductModal({
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  // Product Specificities / Variants State (Sizes & Colors)
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
+  // Product Specificities / Variants State (Sizes & Colors) - Preselect popular defaults (38 & Beige)
+  const [selectedSize, setSelectedSize] = useState(() => {
+    return (product?.sizes && product.sizes.length > 0) ? (product.sizes.includes('38') ? '38' : product.sizes[0]) : '38';
+  });
+  const [selectedColor, setSelectedColor] = useState(() => {
+    return (product?.colors && product.colors.length > 0) ? product.colors[0] : 'Beige';
+  });
   const [variantError, setVariantError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -69,15 +73,9 @@ export default function ProductModal({
   const handleDirectWhatsAppOrder = (e) => {
     e?.preventDefault?.();
     const colorToUse = selectedColor || (product.colors && product.colors[0]) || 'Beige';
-    const sizeToUse = selectedSize;
-
-    if (product.sizes && product.sizes.length > 0 && !sizeToUse) {
-      setVariantError(lang === 'ar' ? 'يرجى اختيار المقاس المناسب أولاً 👟' : 'Veuillez sélectionner votre pointure d\'abord 👟');
-      if (sizeSelectorRef.current) {
-        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
+    const sizeToUse = selectedSize || (product.sizes && (product.sizes.includes('38') ? '38' : product.sizes[0])) || '38';
+    if (!selectedSize) setSelectedSize(sizeToUse);
+    if (!selectedColor) setSelectedColor(colorToUse);
 
     const cleanPhone = activePhone.replace(/[\s\+\.-]/g, '');
     const totalPriceFormatted = formatPrice(product.price * quantity);
@@ -235,36 +233,24 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
 
   const handleAdd = () => {
     if (isOutOfStock) return;
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار المقاس (37، 38، 39 أو 40)' : 'Veuillez sélectionner votre pointure (37, 38, 39 ou 40).'));
-      if (sizeSelectorRef.current) {
-        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-    if (product.colors && product.colors.length > 0 && !selectedColor) {
-      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار اللون' : 'Veuillez sélectionner une couleur.'));
-      return;
-    }
-    onAddToCart(product, quantity, { selectedSize, selectedColor });
+    const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? (product.sizes.includes('38') ? '38' : product.sizes[0]) : '38');
+    const finalColor = selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0] : 'Beige');
+    if (!selectedSize) setSelectedSize(finalSize);
+    if (!selectedColor) setSelectedColor(finalColor);
+    setVariantError('');
+    onAddToCart(product, quantity, { selectedSize: finalSize, selectedColor: finalColor });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
   const handleBuy = () => {
     if (isOutOfStock) return;
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار المقاس (37، 38، 39 أو 40)' : 'Veuillez sélectionner votre pointure (37, 38, 39 ou 40).'));
-      if (sizeSelectorRef.current) {
-        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-    if (product.colors && product.colors.length > 0 && !selectedColor) {
-      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار اللون' : 'Veuillez sélectionner une couleur.'));
-      return;
-    }
-    onBuyNow(product, quantity, { selectedSize, selectedColor });
+    const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? (product.sizes.includes('38') ? '38' : product.sizes[0]) : '38');
+    const finalColor = selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0] : 'Beige');
+    if (!selectedSize) setSelectedSize(finalSize);
+    if (!selectedColor) setSelectedColor(finalColor);
+    setVariantError('');
+    onBuyNow(product, quantity, { selectedSize: finalSize, selectedColor: finalColor });
   };
 
   return (

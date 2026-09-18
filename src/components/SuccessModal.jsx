@@ -27,7 +27,7 @@ export default function SuccessModal({ isOpen, onClose, data, lang = 'fr' }) {
   const { customer, items, total } = orderData;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/70 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-brand-navy/70 backdrop-blur-md animate-fadeIn">
       <div 
         className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 text-center relative p-6 sm:p-8 animate-scaleUp"
         onClick={(e) => e.stopPropagation()}

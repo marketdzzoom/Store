@@ -690,6 +690,20 @@ export default function App() {
 
       {/* Modals & Drawers */}
       
+      {/* Product Quick View / Marketing Landing Page Modal */}
+      <ProductModal
+        product={quickViewProduct}
+        onClose={handleCloseProduct}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        storePhone={emailConfig.storePhone}
+        lang={lang}
+        isSingleProduct={!products || products.length <= 1}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        isAdminLoggedIn={isAdminLoggedIn}
+      />
+
       {/* Cart & Checkout Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
@@ -706,20 +720,6 @@ export default function App() {
         }}
         emailConfig={emailConfig}
         lang={lang}
-      />
-
-      {/* Product Quick View / Marketing Landing Page Modal */}
-      <ProductModal
-        product={quickViewProduct}
-        onClose={handleCloseProduct}
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-        storePhone={emailConfig.storePhone}
-        lang={lang}
-        isSingleProduct={!products || products.length <= 1}
-        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
-        isAdminLoggedIn={isAdminLoggedIn}
       />
 
       {/* Admin Security PIN Login Modal */}
