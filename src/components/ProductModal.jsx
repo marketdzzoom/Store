@@ -277,7 +277,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )
             )}
 
-            {/* Main Interactive Zoomable Image Box - Strictly Fixed Aspect Ratio to prevent any jumping */}
+            {/* Main Interactive Zoomable Image Box - Harmonized Size & Centered Positioning like Laptop */}
             <div 
               ref={imageRef}
               onMouseEnter={() => setIsHoveringZoom(true)}
@@ -286,7 +286,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onClick={() => setIsZoomModalOpen(true)}
-              className="w-full aspect-[4/5] sm:aspect-square md:aspect-auto md:flex-1 md:min-h-0 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner group cursor-zoom-in select-none"
+              className="w-full h-72 sm:h-80 md:h-full md:flex-1 md:min-h-0 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner group cursor-zoom-in select-none"
             >
               {/* Photo Counter Pill Badge */}
               {imageList.length > 1 && (
@@ -313,7 +313,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 src={imgError ? fallbackImg : currentImage}
                 alt={titleText}
                 onError={() => setImgError(true)}
-                className={`w-full h-full object-contain p-2 sm:p-4 transition-transform duration-300 ${
+                className={`w-full h-full max-h-72 sm:max-h-80 md:max-h-none object-contain p-2 sm:p-4 transition-transform duration-300 ${
                   isHoveringZoom ? 'scale-125' : 'scale-100'
                 } ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
                 style={
@@ -540,20 +540,6 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       <span>{variantError}</span>
                     </div>
                   )}
-
-                  {/* Instant Direct Buy Button right below variants */}
-                  {!isOutOfStock && (
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={handleBuy}
-                        className="w-full py-3.5 px-5 rounded-2xl font-black text-sm text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-xl shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-2 ring-2 ring-brand-orange/20 transition-all cursor-pointer"
-                      >
-                        <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
-                        <span>{lang === 'ar' ? 'شراء الآن ⚡ (تأكيد فوري)' : 'Acheter direct ⚡ (Commande Immédiate)'}</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -645,8 +631,22 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )}
             </div>
 
-            {/* Desktop Sticky Action CTAs Footer - Always pinned and visible */}
-            <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2 shrink-0 z-20">
+            {/* Desktop Sticky Action CTAs Footer - Always pinned and visible with Urgency Alert */}
+            <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2.5 shrink-0 z-20">
+              {/* Urgency Alert Strip */}
+              <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-amber-500/15 via-red-500/15 to-amber-500/15 dark:from-amber-500/25 dark:via-red-500/25 dark:to-amber-500/25 rounded-xl border border-amber-400/50 dark:border-amber-600/50 text-xs font-bold shadow-xs">
+                <span className="flex items-center gap-2 text-amber-950 dark:text-amber-200">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                  </span>
+                  <span className="font-black">{lang === 'ar' ? '🔥 طلب مرتفع جداً : متبقي 3 قطع فقط بالسعر المخفض !' : '🔥 Forte Demande : Plus que 3 paires restantes à 5 900 DA !'}</span>
+                </span>
+                <span className="text-[11px] font-black text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/70 px-2 py-0.5 rounded-lg border border-red-200 dark:border-red-900 animate-pulse">
+                  {lang === 'ar' ? '⚡ ينتهي العرض قريباً' : '⚡ Offre Flash Limitée'}
+                </span>
+              </div>
+
               <div className="flex gap-2.5">
                 <button
                   type="button"
@@ -668,14 +668,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                   type="button"
                   onClick={handleBuy}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer ${
+                  className={`flex-1 py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer relative overflow-hidden group ${
                     isOutOfStock
                       ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
-                      : 'bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 hover:shadow-glow ring-2 ring-brand-orange/20'
+                      : 'bg-gradient-to-r from-brand-orange via-amber-500 to-brand-orange hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/40 hover:shadow-glow ring-2 ring-amber-400/80 animate-pulse'
                   }`}
                 >
-                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-pulse" />
-                  <span>{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
+                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-bounce" />
+                  <span className="font-black tracking-wide">{lang === 'ar' ? 'شراء الآن ⚡ (كمية محدودة)' : 'Acheter direct ⚡ (Vite, stock limité)'}</span>
                 </button>
               </div>
 
@@ -686,40 +686,63 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
           </div>
         </div>
 
-        {/* Mobile Fixed Floating Bottom CTA Bar */}
+        {/* Mobile Fixed Floating Bottom CTA Bar with Urgency Alert */}
         <div 
-          className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.15)] flex items-center justify-between gap-3"
-          style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-10px_35px_rgba(0,0,0,0.2)] flex flex-col"
+          style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))' }}
         >
-          <div className="flex flex-col min-w-0">
-            <span className="text-xl font-black text-brand-orange leading-none">
-              {formatPrice(product.price)}
+          {/* Urgency Alert Bar */}
+          <div className="px-3 py-1 bg-gradient-to-r from-amber-500/20 via-red-500/15 to-amber-500/20 border-b border-amber-300/40 dark:border-amber-700/40 flex items-center justify-between text-[11px] font-black text-amber-950 dark:text-amber-200">
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+              </span>
+              <span className="truncate">{lang === 'ar' ? '🔥 متبقي 3 قطع فقط • تخفيض -21%' : '🔥 Plus que 3 paires en stock !'}</span>
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">
-              {lang === 'ar' ? '🇩🇿 دفع عند الاستلام' : '🇩🇿 Paiement à réception'}
+            <span className="text-[10px] font-black text-red-600 dark:text-red-400 bg-white/90 dark:bg-slate-850 px-1.5 py-0.5 rounded shadow-2xs shrink-0">
+              {lang === 'ar' ? 'اطلب الآن ⚡' : 'Offre Flash ⚡'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={isOutOfStock}
-              className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95"
-              title={t.addToCart}
-            >
-              <ShoppingBag className="w-5 h-5 text-brand-orange" />
-            </button>
+          <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-brand-orange leading-none">
+                  {formatPrice(product.price)}
+                </span>
+                {product.oldPrice && (
+                  <span className="text-[11px] text-slate-400 line-through font-bold">
+                    {formatPrice(product.oldPrice)}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">
+                {lang === 'ar' ? '🇩🇿 دفع عند الاستلام' : '🇩🇿 Paiement à réception'}
+              </span>
+            </div>
 
-            <button
-              type="button"
-              onClick={handleBuy}
-              disabled={isOutOfStock}
-              className="flex-1 max-w-[210px] py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-2 ring-2 ring-brand-orange/20"
-            >
-              <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
-              <span>{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
-            </button>
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={isOutOfStock}
+                className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95 cursor-pointer"
+                title={t.addToCart}
+              >
+                <ShoppingBag className="w-5 h-5 text-brand-orange" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBuy}
+                disabled={isOutOfStock}
+                className="flex-1 max-w-[210px] py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange via-amber-500 to-brand-orange hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/40 active:scale-95 flex items-center justify-center gap-1.5 ring-2 ring-amber-400/90 animate-pulse cursor-pointer"
+              >
+                <Zap className="w-4 h-4 fill-white shrink-0 animate-bounce" />
+                <span className="truncate">{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
