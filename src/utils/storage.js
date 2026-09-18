@@ -10,35 +10,35 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v3-pure-static';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v4-ugg-focus';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
   enabled: true,
   tagline: "Vente Flash 24H ⚡",
   seasonBadge: "Arrivage Spécial Saison",
-  title: "Écouteurs Sans Fil Active Noise Cancelling Pro",
-  titleAr: "سماعات لاسلكية عازلة للضوضاء Pro",
-  price: 5800,
-  oldPrice: 7800,
+  title: "Chaussures UGG",
+  titleAr: "أحذية يو جي جي نسائية - أناقة وراحة فائقة",
+  price: 5900,
+  oldPrice: 7375,
   category: "High-Tech",
-  description: "Offre exceptionnelle limitée ! Écouteurs bluetooth haute fidélité avec réduction active du bruit (ANC), autonomie 28h et coffret premium.",
-  descriptionAr: "عرض خاص محدود! سماعات بلوتوث عالية الدقة مع إلغاء الضوضاء النشط وبطارية 28 ساعة.",
+  description: "✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨ L'alliance parfaite entre bien-être absolu, chaleur et style tendance pour votre quotidien.",
+  descriptionAr: "أحذية يو جي جي نسائية عصرية ومريحة بأعلى جودة وتصميم طبي مريح للقدمين مع توصيل سريع لجميع الولايات.",
   images: [
-    "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80"
+    "./products/ugg-beige.jpg",
+    "./products/ugg-black.jpg",
+    "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=800&q=80"
   ],
-  colors: ["Noir Mat", "Blanc Perle", "Bleu Nuit"],
+  colors: ["Beige", "Marron", "Noir"],
   colorImageMap: {
-    "Noir Mat": 0,
-    "Blanc Perle": 1,
-    "Bleu Nuit": 2
+    "Beige": 0,
+    "Noir": 1,
+    "Marron": 0
   },
-  productId: "prod-1",
+  productId: "prod-ugg",
   countdownHours: 24
 };
+
 
 // Load products from localStorage or fallback to initial dataset
 export function getStoredProducts() {
@@ -87,6 +87,11 @@ export function resetStoredProducts() {
 // Special Offer Storage
 export function getStoredSpecialOffer() {
   try {
+    const cachedVersion = localStorage.getItem(CATALOG_BUILD_VERSION_KEY);
+    if (cachedVersion !== CURRENT_CATALOG_VERSION) {
+      saveSpecialOffer(DEFAULT_SPECIAL_OFFER, false);
+      return DEFAULT_SPECIAL_OFFER;
+    }
     const data = localStorage.getItem(SPECIAL_OFFER_KEY);
     if (data) {
       return { ...DEFAULT_SPECIAL_OFFER, ...JSON.parse(data) };

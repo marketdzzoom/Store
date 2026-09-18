@@ -1,5 +1,62 @@
 export const INITIAL_PRODUCTS = [
   {
+    id: "prod-ugg",
+    title: "Chaussures UGG",
+    titleAr: "أحذية يو جي جي نسائية - أناقة وراحة فائقة",
+    price: 5900,
+    oldPrice: 7375,
+    category: "High-Tech",
+    badge: "Offre Spéciale",
+    description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨
+
+L'alliance parfaite entre bien-être absolu, chaleur et style tendance pour votre quotidien.
+
+✨ Conception orthopédique : Semelle ergonomique ultra-confortable, idéale pour la marche et un usage quotidien sans fatigue.
+Pointures : Du 37 au 40
+
+Couleurs disponibles :
+- 🤍 Beige
+- 🤎 Marron
+- 🖤 Noir
+
+Livraison : Rapide et disponible directement à domicile 🚚
+Paiement : À la réception après vérification de votre commande 🤝
+Pour commander ou pour toute information : 0663 08 50 69`,
+    descriptionAr: `✨ أحذية يو جي جي نسائية - أناقة وراحة عصرية فائقة ✨
+
+الجمع المثالي بين الراحة المطلقة، الدفء والأناقة ليومياتك.
+
+✨ تصميم مريح للقدمين مع نعل طبي يخفف الضغط أثناء المشي والاستعمال اليومي.
+المقاسات المتوفرة: من 37 إلى 40
+
+الألوان المتوفرة:
+- 🤍 بيج (Beige)
+- 🤎 بني (Marron)
+- 🖤 أسود (Noir)
+
+🚚 توصيل سريع لجميع الولايات مع الدفع عند الاستلام بعد معاينة الطلب 🤝
+للتواصل أو الاستفسار: 0663 08 50 69`,
+    image: "./products/ugg-beige.jpg",
+    images: [
+      "./products/ugg-beige.jpg",
+      "./products/ugg-black.jpg",
+      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80"
+    ],
+    colors: ["Beige", "Marron", "Noir"],
+    colorImageMap: {
+      "Beige": 0,
+      "Noir": 1,
+      "Marron": 0
+    },
+    sizes: ["37", "38", "39", "40"],
+    inStock: true,
+    stockQuantity: 100,
+    isVisible: true,
+    rating: 4.9,
+    reviewsCount: 48
+  },
+  {
     id: "prod-1",
     title: "Écouteurs Sans Fil Active Noise Cancelling",
     price: 5800,
@@ -21,6 +78,7 @@ export const INITIAL_PRODUCTS = [
     },
     inStock: true,
     stockQuantity: 15,
+    isVisible: false,
     rating: 4.9,
     reviewsCount: 38
   },
@@ -47,6 +105,7 @@ export const INITIAL_PRODUCTS = [
     },
     inStock: true,
     stockQuantity: 8,
+    isVisible: false,
     rating: 4.8,
     reviewsCount: 52
   },
@@ -67,6 +126,7 @@ export const INITIAL_PRODUCTS = [
     colors: ["Gris Anthracite", "Bleu Marine", "Noir"],
     inStock: false,
     stockQuantity: 0,
+    isVisible: false,
     rating: 4.7,
     reviewsCount: 19
   },
@@ -85,6 +145,7 @@ export const INITIAL_PRODUCTS = [
     ],
     inStock: true,
     stockQuantity: 5,
+    isVisible: false,
     rating: 4.9,
     reviewsCount: 15
   },
@@ -103,6 +164,7 @@ export const INITIAL_PRODUCTS = [
     ],
     inStock: true,
     stockQuantity: 12,
+    isVisible: false,
     rating: 4.6,
     reviewsCount: 27
   },
@@ -120,6 +182,7 @@ export const INITIAL_PRODUCTS = [
     ],
     inStock: true,
     stockQuantity: 3,
+    isVisible: false,
     rating: 4.8,
     reviewsCount: 41
   },
@@ -137,6 +200,7 @@ export const INITIAL_PRODUCTS = [
     ],
     inStock: true,
     stockQuantity: 20,
+    isVisible: false,
     rating: 4.7,
     reviewsCount: 31
   },
@@ -155,6 +219,7 @@ export const INITIAL_PRODUCTS = [
     colors: ["Or Vintage", "Bronze Sculpté", "Noir Rétro"],
     inStock: true,
     stockQuantity: 14,
+    isVisible: false,
     rating: 4.9,
     reviewsCount: 64
   },
@@ -178,6 +243,7 @@ export const INITIAL_PRODUCTS = [
     colors: ["Rouge Sport", "Blanc Pur", "Noir All-Black"],
     inStock: true,
     stockQuantity: 25,
+    isVisible: false,
     rating: 4.9,
     reviewsCount: 78
   }
