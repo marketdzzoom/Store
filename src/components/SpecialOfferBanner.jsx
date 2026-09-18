@@ -51,7 +51,7 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
 
   const images = (offer.images && offer.images.length > 0)
     ? offer.images
-    : [offer.image || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80"];
+    : [offer.image || "./products/ugg-1.jpg"];
 
   // Countdown timer ticking effect
   useEffect(() => {

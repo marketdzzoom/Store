@@ -119,9 +119,10 @@ export default function App() {
     };
   }, [cloudConfigVersion]);
 
-  // Language State: 'fr' or 'ar'
+  const LANG_STORAGE_KEY = 'zoom_market_lang_v2';
+  // Language State: 'ar' by default (Arabic landing page)
   const [lang, setLang] = useState(() => {
-    return localStorage.getItem('zoom_market_lang') || 'fr';
+    return localStorage.getItem(LANG_STORAGE_KEY) || 'ar';
   });
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.fr;
@@ -178,16 +179,21 @@ export default function App() {
 
   // Sync Document RTL/LTR Direction & HTML lang
   useEffect(() => {
+    localStorage.setItem(LANG_STORAGE_KEY, lang);
     localStorage.setItem('zoom_market_lang', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang]);
   
-  // Cart State
+  // Cart State: sanitize old mock demo products so only real items exist
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem('zoom_market_cart_v1');
-      return savedCart ? JSON.parse(savedCart) : [];
+      if (!savedCart) return [];
+      const parsed = JSON.parse(savedCart);
+      return Array.isArray(parsed)
+        ? parsed.filter((item) => item.id === 'prod-ugg' || !/^prod-[1-9]$/.test(item.id))
+        : [];
     } catch {
       return [];
     }
@@ -283,10 +289,14 @@ export default function App() {
     }
   };
 
-  // Direct Express Buy Now: adds to cart, closes product modal, and opens checkout drawer
+  // Direct Express Buy Now: clears old leftover test items and immediately focuses exclusively on THIS product
   const handleBuyNow = (product, quantity = 1, options = {}) => {
     if (product.inStock === false || product.stockQuantity === 0 || product.badge === 'Rupture de Stock' || product.badge === 'نفذت الكمية') return;
-    handleAddToCart(product, quantity, options);
+    const selectedSize = options?.selectedSize || '';
+    const selectedColor = options?.selectedColor || '';
+    const cartItemId = `${product.id}${selectedSize ? `-${selectedSize}` : ''}${selectedColor ? `-${selectedColor}` : ''}`;
+    // Exclusively set cart to the item being ordered so no other product (e.g. old test earphones) shows up!
+    setCart([{ ...product, cartItemId, selectedSize, selectedColor, quantity }]);
     handleCloseProduct();
     setIsCartOpen(true);
   };
@@ -486,10 +496,11 @@ export default function App() {
     saveEmailConfig(newConfig);
   };
 
-  // Filtered Products (Hides isVisible === false from public customers)
+  // Filtered Products (Hides isVisible === false and legacy demo products from public customers)
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       if (product.isVisible === false) return false;
+      if (/^prod-[1-9]$/.test(product.id)) return false;
 
       const matchesCategory =
         selectedCategory === 'Tous' || product.category === selectedCategory;

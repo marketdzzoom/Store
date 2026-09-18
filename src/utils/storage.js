@@ -10,13 +10,13 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v8-emailjs-keys';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v12-ar-default-ugg-exclusive';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
   enabled: true,
-  tagline: "Vente Flash 24H ⚡",
-  seasonBadge: "Arrivage Spécial Saison",
+  tagline: "عرض خاص 24 ساعة",
+  seasonBadge: "وصول حصري للموسم",
   title: "Chaussures UGG",
   titleAr: "حذاء UGG نسائي أنيق وعصري",
   price: 5900,
@@ -90,7 +90,11 @@ export function getStoredProducts() {
     if (data !== null) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        // Filter out any legacy demo mock products (prod-1 to prod-9)
+        const cleaned = parsed.filter(p => p.id === 'prod-ugg' || !/^prod-[1-9]$/.test(p.id));
+        if (cleaned.length > 0) {
+          return cleaned;
+        }
       }
     }
   } catch (e) {
@@ -129,7 +133,12 @@ export function getStoredSpecialOffer() {
     }
     const data = localStorage.getItem(SPECIAL_OFFER_KEY);
     if (data) {
-      return { ...DEFAULT_SPECIAL_OFFER, ...JSON.parse(data) };
+      const parsed = JSON.parse(data);
+      if (parsed && (parsed.productId === 'prod-1' || !parsed.productId || !parsed.title || (parsed.title && parsed.title.toLowerCase().includes('écouteur')))) {
+        saveSpecialOffer(DEFAULT_SPECIAL_OFFER, false);
+        return DEFAULT_SPECIAL_OFFER;
+      }
+      return { ...DEFAULT_SPECIAL_OFFER, ...parsed };
     }
   } catch (e) {
     console.error('Error reading special offer:', e);

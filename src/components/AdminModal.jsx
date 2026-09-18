@@ -717,7 +717,7 @@ export default function AdminModal({
       .filter((s) => s.length > 0);
 
     const allImages = [...soImageFiles, ...urlList];
-    const defaultFallback = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80";
+    const defaultFallback = "./products/ugg-1.jpg";
     const finalImages = allImages.length > 0 ? allImages : [defaultFallback];
 
     const parsedSoColors = soColorsInput
