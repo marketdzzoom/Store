@@ -27,7 +27,15 @@ import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
 
-export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, storePhone, lang = 'fr' }) {
+export default function ProductModal({ 
+  product, 
+  onClose, 
+  onAddToCart, 
+  onBuyNow, 
+  storePhone, 
+  lang = 'fr',
+  isSingleProduct = true 
+}) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -52,6 +60,59 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
         setTimeout(() => setCopiedLink(false), 3000);
       }).catch(() => {});
     }
+  };
+
+  // Direct WhatsApp Order with Complete Details
+  const handleDirectWhatsAppOrder = (e) => {
+    e?.preventDefault?.();
+    const colorToUse = selectedColor || (product.colors && product.colors[0]) || 'Beige';
+    const sizeToUse = selectedSize;
+
+    if (product.sizes && product.sizes.length > 0 && !sizeToUse) {
+      setVariantError(lang === 'ar' ? 'يرجى اختيار المقاس المناسب أولاً 👟' : 'Veuillez sélectionner votre pointure d\'abord 👟');
+      if (sizeSelectorRef.current) {
+        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const cleanPhone = activePhone.replace(/[\s\+\.-]/g, '');
+    const totalPriceFormatted = formatPrice(product.price * quantity);
+    const prodTitle = (lang === 'ar' && product.titleAr) ? product.titleAr : (product.title || titleText);
+
+    let message = '';
+    if (lang === 'ar') {
+      message = `السلام عليكم ورحمة الله،
+أود تأكيد طلبي لمنتجكم عبر الموقع:
+✨ *${prodTitle}*
+━━━━━━━━━━━━━━
+👟 *المقاس المطلوب:* ${sizeToUse ? `*${sizeToUse}*` : 'حسب الاختيار'}
+🎨 *اللون المطلوب:* *${colorToUse}*
+🔢 *الكمية:* *${quantity}*
+💵 *السعر الإجمالي:* *${totalPriceFormatted}*
+━━━━━━━━━━━━━━
+🚚 *التوصيل:* سريع إلى المنزل (69 ولاية)
+🤝 *الدفع:* نـقـداً عند الاستلام بعد معاينة وفحص الحذاء.
+
+يرجى التواصل معي لتأكيد عنوان الشحن وإرسال الطلبية في أقرب وقت. وشكراً!`;
+    } else {
+      message = `Bonjour Zoom Market Dz,
+Je souhaite commander via votre boutique :
+✨ *${prodTitle}*
+━━━━━━━━━━━━━━
+👟 *Pointure choisie :* ${sizeToUse ? `*${sizeToUse}*` : 'À préciser'}
+🎨 *Couleur choisie :* *${colorToUse}*
+🔢 *Quantité :* *${quantity}*
+💵 *Prix Total :* *${totalPriceFormatted}*
+━━━━━━━━━━━━━━
+🚚 *Livraison :* Express à domicile (69 Wilayas)
+🤝 *Paiement :* En espèces à la réception après vérification du colis.
+
+Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
+    }
+
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
   };
 
   // HD Interactive Zoom States
@@ -213,17 +274,24 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
         >
           {/* Top Mobile & Desktop Navigation Bar */}
           <div className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 py-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 md:absolute md:top-3.5 md:right-3.5 md:p-0 md:bg-transparent md:border-0 md:justify-end">
-            {/* Mobile Left: Back / Close button */}
+            {/* Mobile Left: Brand Badge when single-product or Back button */}
             <div className="flex items-center gap-1.5 md:hidden">
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1 -ml-1 text-slate-700 dark:text-slate-200 hover:text-brand-orange flex items-center gap-1 font-extrabold text-xs active:scale-95"
-                aria-label="Fermer et retourner à la boutique"
-              >
-                <ChevronLeft className="w-5 h-5 text-brand-orange" />
-                <span>{lang === 'ar' ? 'المتجر' : 'Boutique'}</span>
-              </button>
+              {isSingleProduct ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-brand-orange/10 dark:bg-brand-orange/20 border border-brand-orange/30 text-brand-orange text-xs font-black">
+                  <span>✨</span>
+                  <span>{lang === 'ar' ? 'زوم ماركت ديزاد' : 'Zoom Market Dz'}</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1 -ml-1 text-slate-700 dark:text-slate-200 hover:text-brand-orange flex items-center gap-1 font-extrabold text-xs active:scale-95"
+                  aria-label="Fermer et retourner à la boutique"
+                >
+                  <ChevronLeft className="w-5 h-5 text-brand-orange" />
+                  <span>{lang === 'ar' ? 'المتجر' : 'Boutique'}</span>
+                </button>
+              )}
             </div>
 
             {/* Right Actions: Phone Call, Share / Ad link, Close */}
@@ -251,14 +319,16 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 {copiedLink ? <CheckCheck className="w-4 h-4 text-white" /> : <Share2 className="w-4 h-4 text-brand-orange" />}
               </button>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="bg-white/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-1.5 sm:p-2 rounded-full transition-colors shadow-md backdrop-blur-md border border-slate-200/80 dark:border-slate-700 active:scale-95"
-                aria-label="Fermer"
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+              {!isSingleProduct && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="bg-white/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-1.5 sm:p-2 rounded-full transition-colors shadow-md backdrop-blur-md border border-slate-200/80 dark:border-slate-700 active:scale-95"
+                  aria-label="Fermer"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -594,15 +664,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                     <Phone className="w-3.5 h-3.5 text-brand-orange" />
                     <span className="truncate">{phoneDisplay}</span>
                   </a>
-                  <a
-                    href={`https://wa.me/${activePhone.replace(/[\s\+\.-]/g, '')}?text=${encodeURIComponent(`Bonjour, je souhaite commander : ${titleText} (Prix: ${formatPrice(product.price)})`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95"
+                  <button
+                    type="button"
+                    onClick={handleDirectWhatsAppOrder}
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>WhatsApp</span>
-                  </a>
+                  </button>
                 </div>
               </div>
 

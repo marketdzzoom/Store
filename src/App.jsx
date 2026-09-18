@@ -214,8 +214,35 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
-  const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [quickViewProduct, setQuickViewProduct] = useState(() => {
+    return (products && products.length > 0)
+      ? (products.find((p) => p.id === 'prod-ugg') || products[0])
+      : null;
+  });
   const [successOrderData, setSuccessOrderData] = useState(null);
+
+  // Single Product Store Policy: keep customer always anchored on the UGG landing page
+  useEffect(() => {
+    if (products && products.length <= 1) {
+      const uggProduct = products.find((p) => p.id === 'prod-ugg') || products[0];
+      if (uggProduct && (!quickViewProduct || quickViewProduct.id !== uggProduct.id)) {
+        setQuickViewProduct(uggProduct);
+      }
+    }
+  }, [products, quickViewProduct]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (products && products.length <= 1) {
+        const uggProduct = products.find((p) => p.id === 'prod-ugg') || products[0];
+        if (uggProduct) {
+          setQuickViewProduct(uggProduct);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [products]);
 
   // Sync Cart to LocalStorage
   useEffect(() => {
@@ -273,6 +300,12 @@ export default function App() {
 
   // Close Product Landing Page & Restore Clean URL
   const handleCloseProduct = () => {
+    // If only 1 product in store (UGG exclusive), do not exit into an empty market!
+    if (products && products.length <= 1) {
+      const target = products.find((p) => p.id === 'prod-ugg') || products[0];
+      if (target) setQuickViewProduct(target);
+      return;
+    }
     setQuickViewProduct(null);
     try {
       const url = new URL(window.location.href);
@@ -295,9 +328,8 @@ export default function App() {
     const selectedSize = options?.selectedSize || '';
     const selectedColor = options?.selectedColor || '';
     const cartItemId = `${product.id}${selectedSize ? `-${selectedSize}` : ''}${selectedColor ? `-${selectedColor}` : ''}`;
-    // Exclusively set cart to the item being ordered so no other product (e.g. old test earphones) shows up!
+    // Exclusively set cart to the item being ordered so no other product shows up!
     setCart([{ ...product, cartItemId, selectedSize, selectedColor, quantity }]);
-    handleCloseProduct();
     setIsCartOpen(true);
   };
 
@@ -672,6 +704,7 @@ export default function App() {
         onBuyNow={handleBuyNow}
         storePhone={emailConfig.storePhone}
         lang={lang}
+        isSingleProduct={!products || products.length <= 1}
       />
 
       {/* Admin Security PIN Login Modal */}
@@ -713,7 +746,11 @@ export default function App() {
       {/* Order Success Modal */}
       <SuccessModal
         isOpen={!!successOrderData}
-        onClose={() => setSuccessOrderData(null)}
+        onClose={() => {
+          setSuccessOrderData(null);
+          const uggProduct = (products && products.find((p) => p.id === 'prod-ugg')) || (products && products[0]);
+          if (uggProduct) setQuickViewProduct(uggProduct);
+        }}
         data={successOrderData}
         lang={lang}
       />

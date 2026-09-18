@@ -170,7 +170,7 @@ export default function CartDrawer({
       
       onOrderSuccess({
         orderData,
-        whatsappUrl: generateWhatsAppOrderUrl(orderData, emailConfig.storePhone)
+        whatsappUrl: generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang)
       });
       
       setFullName('');
@@ -215,7 +215,7 @@ export default function CartDrawer({
       console.warn('Background email dispatch error on WhatsApp order:', err);
     });
 
-    const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone);
+    const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang);
     window.open(waUrl, '_blank');
 
     onOrderSuccess({
