@@ -659,6 +659,7 @@ export default function App() {
         onClose={handleCloseProduct}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
+        storePhone={emailConfig.storePhone}
         lang={lang}
       />
 

@@ -164,7 +164,7 @@ TOTAL COMMANDE : ${formatPrice(total)} DZD
 /**
  * Generate WhatsApp Order Link
  */
-export function generateWhatsAppOrderUrl(orderData, storePhone = '0550000000') {
+export function generateWhatsAppOrderUrl(orderData, storePhone = '+213663085069') {
   const { customer, items, subtotal, shippingFee, total } = orderData;
   
   const itemsList = items

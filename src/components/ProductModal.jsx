@@ -18,14 +18,16 @@ import {
   Share2,
   CheckCheck,
   Zap,
-  Link
+  PhoneCall,
+  Phone,
+  MessageSquare
 } from 'lucide-react';
-import { formatPrice, getProductMarketingLink } from '../utils/formatters';
+import { formatPrice, getProductMarketingLink, formatDZPhoneDisplay } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
 
-export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, lang = 'fr' }) {
+export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, storePhone, lang = 'fr' }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -35,6 +37,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const [selectedColor, setSelectedColor] = useState('');
   const [variantError, setVariantError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const activePhone = (storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00') ? storePhone : '+213663085069';
+  const phoneDisplay = activePhone.includes('663') ? '0663 08 50 69' : formatDZPhoneDisplay(activePhone);
+  const sizeSelectorRef = useRef(null);
 
   const handleCopyProductLink = (e) => {
     e?.stopPropagation?.();
@@ -123,8 +129,8 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
     setZoomLevel(1);
     setIsZoomModalOpen(false);
     setImgError(false);
-    setSelectedSize(product?.sizes && product.sizes.length > 0 ? product.sizes[0] : '');
-    setSelectedColor(product?.colors && product.colors.length > 0 ? product.colors[0] : '');
+    setSelectedSize(product?.selectedSize || (product?.sizes && product.sizes.length > 0 ? product.sizes[0] : ''));
+    setSelectedColor(product?.selectedColor || (product?.colors && product.colors.length > 0 ? product.colors[0] : ''));
     setVariantError('');
   }, [product]);
 
@@ -166,11 +172,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const handleAdd = () => {
     if (isOutOfStock) return;
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une taille.');
+      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار المقاس (37، 38، 39 أو 40)' : 'Veuillez sélectionner votre pointure (37, 38, 39 ou 40).'));
+      if (sizeSelectorRef.current) {
+        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     if (product.colors && product.colors.length > 0 && !selectedColor) {
-      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une couleur.');
+      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار اللون' : 'Veuillez sélectionner une couleur.'));
       return;
     }
     onAddToCart(product, quantity, { selectedSize, selectedColor });
@@ -181,11 +190,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
   const handleBuy = () => {
     if (isOutOfStock) return;
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une taille.');
+      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار المقاس (37، 38، 39 أو 40)' : 'Veuillez sélectionner votre pointure (37, 38, 39 ou 40).'));
+      if (sizeSelectorRef.current) {
+        sizeSelectorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     if (product.colors && product.colors.length > 0 && !selectedColor) {
-      setVariantError(t.variantsPrompt || 'Veuillez sélectionner une couleur.');
+      setVariantError(t.variantsPrompt || (lang === 'ar' ? 'يرجى اختيار اللون' : 'Veuillez sélectionner une couleur.'));
       return;
     }
     onBuyNow(product, quantity, { selectedSize, selectedColor });
@@ -193,40 +205,65 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
   return (
     <>
-      {/* Main Product Quick View Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-brand-navy/70 backdrop-blur-sm animate-fadeIn">
+      {/* Main Product Quick View Modal / Full Mobile Landing Page */}
+      <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 sm:backdrop-blur-sm animate-fadeIn overflow-hidden">
         <div 
-          className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-4xl w-full max-h-[95vh] md:h-[660px] shadow-2xl border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
+          className="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] max-w-4xl rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 relative flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Control Bar (Share Link for Ads / WhatsApp & Close) */}
-          <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyProductLink}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-md backdrop-blur-md border ${
-                copiedLink
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30'
-                  : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:text-brand-orange dark:hover:text-brand-orange border-slate-200/80 dark:border-slate-700'
-              }`}
-              title="Copier le lien direct de cette page pour vos publicités ou WhatsApp"
-            >
-              {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-white" /> : <Share2 className="w-3.5 h-3.5 text-brand-orange" />}
-              <span className="text-[11px] sm:text-xs">{copiedLink ? 'Lien copié !' : 'Partager / Lien Pub'}</span>
-            </button>
+          {/* Top Mobile & Desktop Navigation Bar */}
+          <div className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 py-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 md:absolute md:top-3.5 md:right-3.5 md:p-0 md:bg-transparent md:border-0 md:justify-end">
+            {/* Mobile Left: Back / Close button */}
+            <div className="flex items-center gap-1.5 md:hidden">
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 -ml-1 text-slate-700 dark:text-slate-200 hover:text-brand-orange flex items-center gap-1 font-extrabold text-xs active:scale-95"
+                aria-label="Fermer et retourner à la boutique"
+              >
+                <ChevronLeft className="w-5 h-5 text-brand-orange" />
+                <span>{lang === 'ar' ? 'المتجر' : 'Boutique'}</span>
+              </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-white/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-2 rounded-full transition-colors shadow-md backdrop-blur-md border border-slate-200/80 dark:border-slate-700"
-              aria-label="Fermer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {/* Right Actions: Phone Call, Share / Ad link, Close */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <a
+                href={`tel:${activePhone.replace(/[\s\.-]/g, '')}`}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 flex items-center gap-1.5 active:scale-95 shadow-xs"
+                title="Appeler le service client"
+              >
+                <PhoneCall className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[11px] font-extrabold">{phoneDisplay}</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleCopyProductLink}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-md backdrop-blur-md border ${
+                  copiedLink
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30'
+                    : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:text-brand-orange dark:hover:text-brand-orange border-slate-200/80 dark:border-slate-700'
+                }`}
+                title="Copier le lien direct de cette page pour vos publicités ou WhatsApp"
+              >
+                {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-white" /> : <Share2 className="w-3.5 h-3.5 text-brand-orange" />}
+                <span className="text-[11px] sm:text-xs">{copiedLink ? (lang === 'ar' ? 'تم النسخ!' : 'Lien copié !') : (lang === 'ar' ? 'مشاركة' : 'Lien Pub')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="bg-white/90 dark:bg-slate-800/90 text-slate-500 hover:text-slate-900 dark:hover:text-white p-1.5 sm:p-2 rounded-full transition-colors shadow-md backdrop-blur-md border border-slate-200/80 dark:border-slate-700 active:scale-95"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Left Image Section & Interactive Zoom Container (Fixed & balanced, zero empty void) */}
-          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-5 sm:p-6 flex flex-col justify-between relative md:h-full shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
+          <div className="md:w-1/2 bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 md:p-6 flex flex-col justify-between relative md:h-full shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 select-none overflow-hidden">
             {isOutOfStock ? (
               <span className="absolute top-4 left-4 z-10 bg-red-700 text-white text-xs font-extrabold px-3 py-1 rounded-lg uppercase tracking-wider shadow flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
@@ -247,8 +284,29 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
               onClick={() => setIsZoomModalOpen(true)}
-              className="flex-1 flex items-center justify-center py-2 relative cursor-zoom-in overflow-hidden rounded-2xl group min-h-[220px] sm:min-h-[280px] md:min-h-0"
+              className="flex-1 flex items-center justify-center py-2 relative cursor-zoom-in overflow-hidden rounded-2xl group min-h-[240px] sm:min-h-[280px] md:min-h-0"
             >
+              {/* Photo Counter Pill Badge */}
+              {imageList.length > 1 && (
+                <div className="absolute top-3 left-3 z-20 bg-brand-navy/85 text-white text-[11px] font-mono font-black px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 shadow-md">
+                  <span>📸</span>
+                  <span>{selectedImageIndex + 1} / {imageList.length}</span>
+                </div>
+              )}
+
+              {/* Active Color Pill Badge on Image */}
+              {(() => {
+                const activeCol = getColorForImageIndex(selectedImageIndex, product);
+                if (!activeCol) return null;
+                const cStyle = getColorStyle(activeCol);
+                return (
+                  <div className="absolute top-3 right-3 z-20 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5 shadow border border-slate-200 dark:border-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: cStyle.background }} />
+                    <span>{activeCol}</span>
+                  </div>
+                );
+              })()}
+
               <img
                 src={imgError ? fallbackImg : currentImage}
                 alt={titleText}
@@ -272,7 +330,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       e.stopPropagation();
                       handlePrevImage(e);
                     }}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-2 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-95 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
                     title="Photo précédente"
                     aria-label="Photo précédente"
                   >
@@ -285,7 +343,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                       e.stopPropagation();
                       handleNextImage(e);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-2 rounded-full bg-white/95 dark:bg-slate-900/95 hover:bg-brand-orange hover:text-white text-slate-800 dark:text-white shadow-lg transition-all active:scale-90 opacity-95 sm:opacity-0 group-hover:opacity-100 border border-slate-200 dark:border-slate-700"
                     title="Photo suivante"
                     aria-label="Photo suivante"
                   >
@@ -328,10 +386,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
             )}
           </div>
 
-          {/* Right Info Section with independent scroll & sticky bottom CTA bar */}
-          <div className="md:w-1/2 flex flex-col h-full overflow-hidden relative bg-white dark:bg-slate-900">
-            {/* Scrollable details pane */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4">
+          {/* Right Info Section with independent scroll on desktop & unified single-scroll on mobile */}
+          <div className="md:w-1/2 flex flex-col md:h-full md:overflow-hidden relative bg-white dark:bg-slate-900">
+            {/* Details pane: smooth single-scroll on mobile with pb-28 to clear fixed bottom bar */}
+            <div className="flex-1 md:overflow-y-auto p-4 sm:p-6 md:p-7 space-y-4 pb-28 md:pb-4">
               {/* Category & Rating */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-brand-orange uppercase tracking-wider">
@@ -339,19 +397,19 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </span>
                 <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span>{product.rating || '4.8'}</span>
-                  <span className="text-slate-400">({product.reviewsCount || 24} avis)</span>
+                  <span>{product.rating || '4.9'}</span>
+                  <span className="text-slate-400">({product.reviewsCount || 48} avis)</span>
                 </div>
               </div>
 
               {/* Title */}
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-snug">
                 {titleText}
               </h2>
 
               {/* Price */}
               <div className="flex items-baseline gap-3">
-                <span className="text-2xl sm:text-3xl font-black text-brand-navy dark:text-white">
+                <span className="text-2xl sm:text-3xl font-black text-brand-orange">
                   {formatPrice(product.price)}
                 </span>
                 {product.oldPrice && (
@@ -359,16 +417,11 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                     {formatPrice(product.oldPrice)}
                   </span>
                 )}
-              </div>
-
-              {/* Structured & Impactful Description (without redundant bottom cards) */}
-              <div>
-                <ProductDescription 
-                  description={descText} 
-                  lang={lang} 
-                  showPhoneCTA={true} 
-                  showTrustCards={false} 
-                />
+                {product.oldPrice && (
+                  <span className="bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded-lg shadow-xs">
+                    -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% OFF
+                  </span>
+                )}
               </div>
 
               {/* Product Specificities & Variants: Sizes & Colors */}
@@ -376,15 +429,22 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 <div className="space-y-3 pt-1">
                   {/* Sizes / Pointures Selection */}
                   {product.sizes && product.sizes.length > 0 && (
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <div 
+                      ref={sizeSelectorRef}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        variantError && !selectedSize
+                          ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-400/50'
+                          : 'bg-slate-50 dark:bg-slate-850 border-slate-200/80 dark:border-slate-800'
+                      }`}
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                           <span>👟</span>
-                          <span>{t.selectSize || 'Pointure / Taille :'}</span>
+                          <span>{t.selectSize || (lang === 'ar' ? 'المقاس / الحجم :' : 'Pointure / Taille :')}</span>
                         </span>
                         {selectedSize && (
-                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/20">
-                            {selectedSize}
+                          <span className="text-xs font-black text-brand-orange bg-brand-orange/10 dark:bg-brand-orange/20 px-2.5 py-0.5 rounded-lg border border-brand-orange/30">
+                            Pointure {selectedSize}
                           </span>
                         )}
                       </div>
@@ -399,7 +459,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                                 setSelectedSize(sz);
                                 setVariantError('');
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-150 active:scale-95 ${
+                              className={`min-w-[50px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-black border transition-all duration-150 active:scale-95 ${
                                 isSelected
                                   ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/30'
                                   : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-brand-orange/60 hover:bg-slate-50 dark:hover:bg-slate-750'
@@ -415,11 +475,11 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
 
                   {/* Colors Selection */}
                   {product.colors && product.colors.length > 0 && (
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                           <span>🎨</span>
-                          <span>{t.selectColor || 'Couleur :'}</span>
+                          <span>{t.selectColor || (lang === 'ar' ? 'اللون :' : 'Couleur :')}</span>
                         </span>
                         {selectedColor && (() => {
                           const selStyle = getColorStyle(selectedColor);
@@ -481,7 +541,70 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </div>
               )}
 
-              {/* Quantity Selector */}
+              {/* Algerian Fast COD Assurances & Stock Bar */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap text-xs">
+                {isOutOfStock ? (
+                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{t.outOfStock}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>{t.inStock} ({product.stockQuantity ?? 100})</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
+                  <Truck className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                  <span>{lang === 'ar' ? 'توصيل 69 ولاية' : 'Livraison 69 Wilayas'}</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-brand-navy dark:text-sky-400 shrink-0" />
+                  <span>{lang === 'ar' ? 'دفع عند الاستلام' : 'Paiement à la livraison'}</span>
+                </div>
+              </div>
+
+              {/* Structured & Impactful Description */}
+              <div>
+                <ProductDescription 
+                  description={descText} 
+                  lang={lang} 
+                  showPhoneCTA={true} 
+                  showTrustCards={false} 
+                />
+              </div>
+
+              {/* Direct Customer Service & WhatsApp Order Assistance Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-slate-800 dark:to-slate-850 rounded-2xl border border-amber-300/60 dark:border-amber-700/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <PhoneCall className="w-4 h-4 text-brand-orange" />
+                    <span>{lang === 'ar' ? 'طلب فوري أو استفسار عبر الهاتف / واتساب :' : 'Commande express par téléphone ou WhatsApp :'}</span>
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`tel:${activePhone.replace(/[\s\.-]/g, '')}`}
+                    className="py-2.5 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:border-brand-orange flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-brand-orange" />
+                    <span className="truncate">{phoneDisplay}</span>
+                  </a>
+                  <a
+                    href={`https://wa.me/${activePhone.replace(/[\s\+\.-]/g, '')}?text=${encodeURIComponent(`Bonjour, je souhaite commander : ${titleText} (Prix: ${formatPrice(product.price)})`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Quantity Selector on Desktop */}
               {!isOutOfStock && (
                 <div className="flex items-center gap-4 py-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.quantity}</span>
@@ -504,36 +627,11 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                   </div>
                 </div>
               )}
-
-              {/* Unified Compact Assurances & Stock Bar */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap text-xs">
-                {isOutOfStock ? (
-                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t.outOfStock}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t.inStock} ({product.stockQuantity ?? 10})</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
-                  <Truck className="w-3.5 h-3.5 text-brand-orange shrink-0" />
-                  <span>{t.shipping69 || 'Livraison à domicile'}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-navy dark:text-sky-400 shrink-0" />
-                  <span>{t.securePayment || 'Paiement à la livraison'}</span>
-                </div>
-              </div>
             </div>
 
-            {/* Sticky Action CTAs Footer - Always visible without scrolling */}
-            <div className="sticky bottom-0 z-30 p-3 sm:p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex flex-col gap-2 shrink-0">
-              <div className="flex flex-col sm:flex-row gap-2.5">
+            {/* Desktop Sticky Action CTAs Footer */}
+            <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2 shrink-0">
+              <div className="flex gap-2.5">
                 <button
                   onClick={handleAdd}
                   disabled={isOutOfStock}
@@ -563,11 +661,47 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 </button>
               </div>
 
-              {/* Express Algerian COD reassurance badge */}
-              <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium text-center">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium text-center">
                 <span>{lang === 'ar' ? '🇩🇿 الدفع عند الاستلام (69 ولاية) • عاين سلعتك براحتك قبل الدفع' : '🇩🇿 Paiement à la livraison (69 Wilayas) • Vérifiez votre colis avant de payer'}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Fixed Floating Bottom CTA Bar */}
+        <div 
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.15)] flex items-center justify-between gap-3"
+          style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
+        >
+          <div className="flex flex-col min-w-0">
+            <span className="text-xl font-black text-brand-orange leading-none">
+              {formatPrice(product.price)}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">
+              {lang === 'ar' ? '🇩🇿 دفع عند الاستلام' : '🇩🇿 Paiement à réception'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95"
+              title={t.addToCart}
+            >
+              <ShoppingBag className="w-5 h-5 text-brand-orange" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBuy}
+              disabled={isOutOfStock}
+              className="flex-1 max-w-[210px] py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-2 ring-2 ring-brand-orange/20"
+            >
+              <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
+              <span>{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
+            </button>
           </div>
         </div>
       </div>

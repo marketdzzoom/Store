@@ -118,11 +118,12 @@ export default function Header({
 
           <div className="flex items-center gap-4 text-slate-300 font-medium text-[11px]">
             <a 
-              href={`tel:${storePhone}`} 
+              href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '+213663085069').replace(/\s+/g, '')}`} 
               className="flex items-center gap-1 hover:text-brand-orange transition-colors"
+              title="Appeler le service client"
             >
               <PhoneCall className="w-3 h-3 text-brand-orange" />
-              <span>{t.clientService} <strong className="text-white" dir="ltr">{storePhone || '0550 00 00 00'}</strong></span>
+              <span>{t.clientService} <strong className="text-white" dir="ltr">{storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '0663 08 50 69'}</strong></span>
             </a>
           </div>
         </div>

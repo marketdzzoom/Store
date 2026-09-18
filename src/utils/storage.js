@@ -10,7 +10,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.18-v6-ugg-8photos';
+const CURRENT_CATALOG_VERSION = '2026.09.18-v7-mobile-landing-phone';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -216,7 +216,7 @@ export const DEFAULT_EMAIL_CONFIG = {
   templateId: '',
   publicKey: '',
   recipientEmail: 'marketdzzoom@gmail.com',
-  storePhone: '0550000000',
+  storePhone: '+213663085069',
   formspreeEndpoint: ''
 };
 
@@ -224,7 +224,13 @@ export function getStoredEmailConfig() {
   try {
     const data = localStorage.getItem(EMAIL_CONFIG_KEY);
     if (data) {
-      return { ...DEFAULT_EMAIL_CONFIG, ...JSON.parse(data) };
+      const parsed = JSON.parse(data);
+      // Auto-migrate if stored phone was previous default dummy 0550000000 or empty
+      if (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00') {
+        parsed.storePhone = '+213663085069';
+        localStorage.setItem(EMAIL_CONFIG_KEY, JSON.stringify(parsed));
+      }
+      return { ...DEFAULT_EMAIL_CONFIG, ...parsed };
     }
   } catch (e) {
     console.error('Error reading email config from localStorage:', e);

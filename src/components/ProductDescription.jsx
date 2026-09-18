@@ -223,17 +223,22 @@ function renderFormattedTextWithLinks(text, isDark = false) {
       parts.push(text.substring(lastIndex, start));
     }
 
+    const cleanDigits = phoneStr.replace(/[\s\.-]/g, '');
+    const telLink = cleanDigits.startsWith('+') ? cleanDigits : (cleanDigits.startsWith('0') ? `+213${cleanDigits.substring(1)}` : `+213${cleanDigits}`);
     parts.push(
-      <strong 
+      <a 
         key={`phone-${idx}`} 
+        href={`tel:${telLink}`}
         className={
           isDark
-            ? "font-bold text-amber-300 tracking-wider"
-            : "font-extrabold text-slate-900 dark:text-white tracking-wider"
+            ? "font-extrabold text-amber-300 underline hover:text-amber-200 tracking-wider transition-colors inline-flex items-center gap-1"
+            : "font-extrabold text-brand-orange underline hover:text-brand-orange-hover tracking-wider transition-colors inline-flex items-center gap-1"
         }
+        title="Appeler directement ce numéro"
       >
-        {phoneStr}
-      </strong>
+        <span>📞</span>
+        <span>{phoneStr}</span>
+      </a>
     );
 
     lastIndex = start + phoneStr.length;

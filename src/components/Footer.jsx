@@ -92,8 +92,11 @@ export default function Footer({ onCategorySelect, storePhone, recipientEmail, o
               </li>
               <li className="flex items-center gap-2">
                 <PhoneCall className="w-4 h-4 text-slate-400" />
-                <a href={`tel:${storePhone}`} className="hover:text-brand-orange transition-colors font-bold text-white">
-                  {storePhone || '0550 00 00 00'}
+                <a 
+                  href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '+213663085069').replace(/\s+/g, '')}`} 
+                  className="hover:text-brand-orange transition-colors font-bold text-white"
+                >
+                  {storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '0663 08 50 69'}
                 </a>
               </li>
             </ul>

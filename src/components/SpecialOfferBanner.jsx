@@ -21,24 +21,31 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 35, seconds: 22 });
 
   const matchedProduct = (products && products.length > 0)
-    ? products.find((p) => p.id === offer?.productId || p.title === offer?.title)
+    ? (products.find((p) => p.id === 'prod-ugg' || p.title?.toLowerCase().includes('ugg')) || products.find((p) => p.id === offer?.productId || p.title === offer?.title))
     : null;
 
   const offerColors = (offer?.colors && offer.colors.length > 0)
     ? offer.colors
-    : (matchedProduct?.colors || []);
+    : (matchedProduct?.colors || ["Beige", "Marron", "Noir"]);
 
   const offerSizes = (offer?.sizes && offer.sizes.length > 0)
     ? offer.sizes
-    : (matchedProduct?.sizes || []);
+    : (matchedProduct?.sizes || ["37", "38", "39", "40"]);
 
-  const [selectedColor, setSelectedColor] = useState(() => (offerColors.length > 0 ? offerColors[0] : ''));
+  const [selectedColor, setSelectedColor] = useState(() => (offerColors.length > 0 ? offerColors[0] : 'Beige'));
+  const [selectedSize, setSelectedSize] = useState(() => (offerSizes.length > 0 ? offerSizes[0] : '38'));
 
   useEffect(() => {
     if (offerColors.length > 0 && (!selectedColor || !offerColors.includes(selectedColor))) {
       setSelectedColor(offerColors[0]);
     }
   }, [offerColors]);
+
+  useEffect(() => {
+    if (offerSizes.length > 0 && (!selectedSize || !offerSizes.includes(selectedSize))) {
+      setSelectedSize(offerSizes[0]);
+    }
+  }, [offerSizes]);
 
   if (!offer || !offer.enabled) return null;
 
@@ -117,12 +124,12 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
   };
 
   const offerProductObj = {
-    id: offer.productId || matchedProduct?.id || 'special-offer-item',
+    id: offer.productId || matchedProduct?.id || 'prod-ugg',
     title: offer.title,
     titleAr: offer.titleAr,
     price: offer.price,
     oldPrice: offer.oldPrice,
-    category: offer.category || 'High-Tech',
+    category: offer.category || 'Mode & Habillement',
     description: offer.description,
     descriptionAr: offer.descriptionAr,
     image: images[activeImageIndex] || images[0],
@@ -130,8 +137,20 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
     colors: offerColors,
     sizes: offerSizes,
     selectedColor: selectedColor,
+    selectedSize: selectedSize,
     inStock: true,
     badge: offer.tagline || 'Offre Spéciale'
+  };
+
+  const handleOpenUgg = (overrideColor = null, overrideSize = null) => {
+    const target = matchedProduct || (products && products.find((p) => p.id === 'prod-ugg' || p.title?.toLowerCase().includes('ugg'))) || offerProductObj;
+    const finalProd = {
+      ...target,
+      id: target.id || 'prod-ugg',
+      selectedColor: overrideColor || selectedColor || target.selectedColor || (offerColors[0] || 'Beige'),
+      selectedSize: overrideSize || selectedSize || target.selectedSize || (offerSizes[0] || '38')
+    };
+    onQuickView(finalProd);
   };
 
   return (
@@ -212,6 +231,39 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
             </div>
           )}
 
+          {/* Real Sizes / Pointures Selection */}
+          {offerSizes.length > 0 && (
+            <div className="flex items-center justify-center lg:justify-start gap-2.5 pt-1 flex-wrap">
+              <span className="text-xs text-slate-300 font-bold flex items-center gap-1.5">
+                <span>👟</span>
+                <span>{lang === 'ar' ? 'المقاسات المتوفرة :' : 'Pointures disponibles :'}</span>
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {offerSizes.map((sz) => {
+                  const isSelected = selectedSize === sz;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSize(sz);
+                        handleOpenUgg(null, sz);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 border backdrop-blur-sm ${
+                        isSelected
+                          ? 'bg-brand-orange text-white border-brand-orange shadow-lg shadow-brand-orange/30 scale-105 ring-2 ring-brand-orange/40'
+                          : 'bg-white/10 text-slate-200 border-white/20 hover:bg-white/20 hover:border-white/30'
+                      }`}
+                      title={`Sélectionner pointure ${sz}`}
+                    >
+                      {sz}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Price & Discount Display */}
           <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-2xl flex items-baseline gap-3 shadow-lg">
@@ -270,20 +322,20 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-4">
             <button
               type="button"
-              onClick={() => onBuyNow(offerProductObj, 1)}
+              onClick={() => handleOpenUgg()}
               className="w-full sm:w-auto bg-brand-orange hover:bg-brand-orange-hover text-white py-3.5 px-6 rounded-2xl font-extrabold text-sm shadow-xl hover:shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" />
-              <span>{lang === 'ar' ? 'استفد من العرض الخاص الآن' : 'Profiter de l\'Offre Spéciale'}</span>
+              <span>{lang === 'ar' ? 'اطلب الآن - حذاء UGG ⚡' : 'Commander Chaussures UGG ⚡'}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => onQuickView(offerProductObj)}
+              onClick={() => handleOpenUgg()}
               className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3.5 px-5 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
             >
               <Eye className="w-4 h-4 text-brand-orange" />
-              <span>{t.quickView} & Zoom HD</span>
+              <span>{lang === 'ar' ? 'معاينة الـ 8 صور والخصائص 👁️' : 'Voir les 8 Photos HD & Détails 👁️'}</span>
             </button>
           </div>
         </div>
@@ -291,7 +343,7 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
         {/* Right Multi-Photo Interactive Gallery (5 cols) */}
         <div className="lg:col-span-5 relative">
           <div 
-            onClick={() => onQuickView(offerProductObj)}
+            onClick={() => handleOpenUgg()}
             className="relative mx-auto max-w-md bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-white/20 shadow-2xl group cursor-pointer"
           >
             {/* Main Carousel Active Image */}
@@ -301,6 +353,12 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
                 alt={titleText}
                 className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
               />
+
+              {/* Photo Counter Pill Badge */}
+              <div className="absolute top-3 left-3 bg-brand-navy/80 text-white text-[11px] font-mono font-bold px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 shadow">
+                <span>📸</span>
+                <span>{activeImageIndex + 1} / {images.length}</span>
+              </div>
 
               {/* Zoom HD Prompt Badge */}
               <div className="absolute top-3 right-3 bg-brand-navy/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 shadow">

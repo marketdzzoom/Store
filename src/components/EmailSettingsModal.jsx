@@ -7,7 +7,7 @@ export default function EmailSettingsModal({ isOpen, onClose, emailConfig, onSav
   const [templateId, setTemplateId] = useState(emailConfig.templateId || '');
   const [publicKey, setPublicKey] = useState(emailConfig.publicKey || '');
   const [recipientEmail, setRecipientEmail] = useState(emailConfig.recipientEmail || 'marketdzzoom@gmail.com');
-  const [storePhone, setStorePhone] = useState(emailConfig.storePhone || '0550000000');
+  const [storePhone, setStorePhone] = useState((emailConfig.storePhone && emailConfig.storePhone !== '0550000000') ? emailConfig.storePhone : '+213663085069');
   const [formspreeEndpoint, setFormspreeEndpoint] = useState(emailConfig.formspreeEndpoint || '');
 
   const [saved, setSaved] = useState(false);
