@@ -631,19 +631,18 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
               )}
             </div>
 
-            {/* Desktop Sticky Action CTAs Footer - Always pinned and visible with Urgency Alert */}
+            {/* Desktop Sticky Action CTAs Footer - Always pinned and visible with Professional Guarantee Bar */}
             <div className="hidden md:flex p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] flex-col gap-2.5 shrink-0 z-20">
-              {/* Urgency Alert Strip */}
-              <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-amber-500/15 via-red-500/15 to-amber-500/15 dark:from-amber-500/25 dark:via-red-500/25 dark:to-amber-500/25 rounded-xl border border-amber-400/50 dark:border-amber-600/50 text-xs font-bold shadow-xs">
-                <span className="flex items-center gap-2 text-amber-950 dark:text-amber-200">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+              {/* Professional Guarantee & Trust Strip */}
+              <div className="flex items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-emerald-500/10 dark:from-emerald-500/15 dark:via-amber-500/15 dark:to-emerald-500/15 rounded-xl border border-emerald-300/50 dark:border-emerald-700/50 text-xs font-bold shadow-xs">
+                <span className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0" />
+                  <span className="font-bold">
+                    {lang === 'ar' ? '✨ عرض خاص متوفر • توصيل سريع لكافة الـ 69 ولاية والدفع بعد المعاينة 🤝' : '✨ Offre Spéciale • Livraison Express 69 Wilayas & Paiement après vérification 🤝'}
                   </span>
-                  <span className="font-black">{lang === 'ar' ? '🔥 طلب مرتفع جداً : متبقي 3 قطع فقط بالسعر المخفض !' : '🔥 Forte Demande : Plus que 3 paires restantes à 5 900 DA !'}</span>
                 </span>
-                <span className="text-[11px] font-black text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/70 px-2 py-0.5 rounded-lg border border-red-200 dark:border-red-900 animate-pulse">
-                  {lang === 'ar' ? '⚡ ينتهي العرض قريباً' : '⚡ Offre Flash Limitée'}
+                <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  {lang === 'ar' ? '🚚 شحن سريع' : '🚚 Expédition 24/48h'}
                 </span>
               </div>
 
@@ -668,14 +667,14 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                   type="button"
                   onClick={handleBuy}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer relative overflow-hidden group ${
+                  className={`flex-1 py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer ${
                     isOutOfStock
                       ? 'bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed shadow-none'
-                      : 'bg-gradient-to-r from-brand-orange via-amber-500 to-brand-orange hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/40 hover:shadow-glow ring-2 ring-amber-400/80 animate-pulse'
+                      : 'bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 hover:shadow-glow ring-2 ring-brand-orange/20'
                   }`}
                 >
-                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-bounce" />
-                  <span className="font-black tracking-wide">{lang === 'ar' ? 'شراء الآن ⚡ (كمية محدودة)' : 'Acheter direct ⚡ (Vite, stock limité)'}</span>
+                  <Zap className="w-4 h-4 fill-current text-white shrink-0 animate-pulse" />
+                  <span className="font-black tracking-wide">{lang === 'ar' ? 'طلب فوري ⚡' : 'Commander Maintenant ⚡'}</span>
                 </button>
               </div>
 
@@ -686,22 +685,19 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
           </div>
         </div>
 
-        {/* Mobile Fixed Floating Bottom CTA Bar with Urgency Alert */}
+        {/* Mobile Fixed Floating Bottom CTA Bar */}
         <div 
-          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-10px_35px_rgba(0,0,0,0.2)] flex flex-col"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-10px_35px_rgba(0,0,0,0.15)] flex flex-col"
           style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))' }}
         >
-          {/* Urgency Alert Bar */}
-          <div className="px-3 py-1 bg-gradient-to-r from-amber-500/20 via-red-500/15 to-amber-500/20 border-b border-amber-300/40 dark:border-amber-700/40 flex items-center justify-between text-[11px] font-black text-amber-950 dark:text-amber-200">
+          {/* Professional Reassurance Bar */}
+          <div className="px-3 py-1 bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-emerald-500/10 dark:from-emerald-500/15 dark:to-slate-900 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-[11px] font-bold text-slate-800 dark:text-slate-200">
             <span className="flex items-center gap-1.5 truncate">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-              </span>
-              <span className="truncate">{lang === 'ar' ? '🔥 متبقي 3 قطع فقط • تخفيض -21%' : '🔥 Plus que 3 paires en stock !'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+              <span className="truncate">{lang === 'ar' ? '✨ دفع عند الاستلام بعد المعاينة' : '✨ Paiement à réception après vérification 🤝'}</span>
             </span>
-            <span className="text-[10px] font-black text-red-600 dark:text-red-400 bg-white/90 dark:bg-slate-850 px-1.5 py-0.5 rounded shadow-2xs shrink-0">
-              {lang === 'ar' ? 'اطلب الآن ⚡' : 'Offre Flash ⚡'}
+            <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/80 dark:border-emerald-800 px-1.5 py-0.5 rounded shadow-2xs shrink-0">
+              {lang === 'ar' ? 'توصيل 69 ولاية 🚚' : 'Livraison 69 Wilayas 🚚'}
             </span>
           </div>
 
@@ -718,7 +714,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 )}
               </div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">
-                {lang === 'ar' ? '🇩🇿 دفع عند الاستلام' : '🇩🇿 Paiement à réception'}
+                {lang === 'ar' ? '🇩🇿 توصيل سريع' : '🇩🇿 Expédition rapide'}
               </span>
             </div>
 
@@ -737,10 +733,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyNow, 
                 type="button"
                 onClick={handleBuy}
                 disabled={isOutOfStock}
-                className="flex-1 max-w-[210px] py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange via-amber-500 to-brand-orange hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/40 active:scale-95 flex items-center justify-center gap-1.5 ring-2 ring-amber-400/90 animate-pulse cursor-pointer"
+                className="flex-1 max-w-[210px] py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm shadow-xl text-white bg-gradient-to-r from-brand-orange to-amber-500 hover:from-brand-orange-hover hover:to-amber-600 shadow-brand-orange/30 active:scale-95 flex items-center justify-center gap-1.5 ring-2 ring-brand-orange/20 cursor-pointer"
               >
-                <Zap className="w-4 h-4 fill-white shrink-0 animate-bounce" />
-                <span className="truncate">{lang === 'ar' ? 'شراء الآن ⚡' : 'Acheter direct ⚡'}</span>
+                <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
+                <span className="truncate">{lang === 'ar' ? 'اطلب الآن ⚡' : 'Commander ⚡'}</span>
               </button>
             </div>
           </div>
