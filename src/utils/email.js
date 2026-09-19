@@ -179,40 +179,57 @@ export function generateWhatsAppOrderUrl(orderData, storePhone = '+213663085069'
   const { customer, items } = orderData;
   const isAr = lang === 'ar';
   
-  const itemsList = items
-    .map((i) => {
-      const title = (isAr && i.titleAr) ? i.titleAr : i.title;
-      const specs = [];
-      if (i.selectedSize) specs.push(isAr ? `المقاس: *${i.selectedSize}*` : `Pointure: *${i.selectedSize}*`);
-      if (i.selectedColor) specs.push(isAr ? `اللون: *${i.selectedColor}*` : `Couleur: *${i.selectedColor}*`);
-      const specsStr = specs.length > 0 ? `\n   ${specs.join(' | ')}` : '';
-      return `• *${title}*${specsStr}\n   ${isAr ? 'الكمية' : 'Quantité'}: *${i.quantity}*`;
-    })
-    .join('\n\n');
+  let itemsFormatted = '';
+  if (items && items.length === 1) {
+    const it = items[0];
+    const title = (isAr && it.titleAr) ? it.titleAr : (it.title || 'حذاء UGG');
+    const sizeStr = it.selectedSize || '38';
+    const colorStr = it.selectedColor || 'Beige';
+    const qtyStr = it.quantity || 1;
+    itemsFormatted = isAr
+      ? `✨ *الموديل:* ${title}\n👟 *المقاس:* ${sizeStr}\n🎨 *اللون:* ${colorStr}\n🔢 *الكمية:* ${qtyStr}`
+      : `✨ *Modèle :* ${title}\n👟 *Pointure :* ${sizeStr}\n🎨 *Couleur :* ${colorStr}\n🔢 *Quantité :* ${qtyStr}`;
+  } else if (items && items.length > 1) {
+    itemsFormatted = items
+      .map((it) => {
+        const title = (isAr && it.titleAr) ? it.titleAr : it.title;
+        const specs = [];
+        if (it.selectedSize) specs.push(isAr ? `المقاس: *${it.selectedSize}*` : `Pointure: *${it.selectedSize}*`);
+        if (it.selectedColor) specs.push(isAr ? `اللون: *${it.selectedColor}*` : `Couleur: *${it.selectedColor}*`);
+        const specsStr = specs.length > 0 ? `\n   ${specs.join(' | ')}` : '';
+        return `• *${title}*${specsStr}\n   ${isAr ? 'الكمية' : 'Quantité'}: *${it.quantity}*`;
+      })
+      .join('\n\n');
+  }
+
+  let customerFormatted = '';
+  if (customer && (customer.fullName || customer.phone || customer.wilaya || customer.address)) {
+    if (isAr) {
+      customerFormatted = `👤 *معلومات الزبون للتوصيل:*
+• الاسم واللقب: ${customer.fullName || 'غير محدد'}
+• رقم الهاتف: ${customer.phone || 'غير محدد'}${customer.phoneBackup ? ` (احتياطي: ${customer.phoneBackup})` : ''}
+• ولاية التوصيل: ${customer.wilaya || 'غير محدد'}
+• البلدية / العنوان: ${customer.address || 'غير محدد'}${customer.notes ? `\n• ملاحظات إضافية: ${customer.notes}` : ''}`;
+    } else {
+      customerFormatted = `👤 *Coordonnées du client pour la livraison :*
+• Nom & Prénom : ${customer.fullName || 'Non précisé'}
+• Téléphone : ${customer.phone || 'Non précisé'}${customer.phoneBackup ? ` (Secours : ${customer.phoneBackup})` : ''}
+• Wilaya : ${customer.wilaya || 'Non précisé'}
+• Commune / Adresse : ${customer.address || 'Non précisé'}${customer.notes ? `\n• Remarques : ${customer.notes}` : ''}`;
+    }
+  }
 
   let text = '';
   if (isAr) {
     text = `السلام عليكم، أنا مهتم بهذا الموديل وحاب نشريه:
 
-✨ *تفاصيل الطلبية:*
-${itemsList}
-
-👤 *معلومات التوصيل:*
-• الاسم: ${customer?.fullName || ''}
-• الهاتف: ${customer?.phone || ''}${customer?.phoneBackup ? ` (${customer.phoneBackup})` : ''}
-• ولاية: ${customer?.wilaya || ''}
-• البلدية / العنوان: ${customer?.address || ''}${customer?.notes ? `\n• ملاحظات: ${customer.notes}` : ''}`;
+${itemsFormatted}
+${customerFormatted ? `\n━━━━━━━━━━━━━━\n${customerFormatted}` : ''}`;
   } else {
     text = `Bonjour, je suis intéressé par ce modèle et je souhaite l'acheter :
 
-✨ *Détails de la commande :*
-${itemsList}
-
-👤 *Informations de livraison :*
-• Nom : ${customer?.fullName || ''}
-• Tél : ${customer?.phone || ''}${customer?.phoneBackup ? ` (${customer.phoneBackup})` : ''}
-• Wilaya : ${customer?.wilaya || ''}
-• Commune / Adresse : ${customer?.address || ''}${customer?.notes ? `\n• Notes : ${customer.notes}` : ''}`;
+${itemsFormatted}
+${customerFormatted ? `\n━━━━━━━━━━━━━━\n${customerFormatted}` : ''}`;
   }
 
   const encodedText = encodeURIComponent(text);

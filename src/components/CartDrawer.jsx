@@ -164,59 +164,25 @@ export default function CartDrawer({
     addOrderToStorage(orderData);
     recordOrderTimestamp();
 
+    const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang);
+
+    // 1. Systematic immediate dispatch to WhatsApp with all customer coordinates & order details
     try {
-      await sendOrderNotification({ orderData, emailConfig });
-      setLoading(false);
-      
-      onOrderSuccess({
-        orderData,
-        whatsappUrl: generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang)
-      });
-      
-      setFullName('');
-      setPhone('');
-      setAddress('');
-      setNotes('');
-      setErrors({});
-    } catch (err) {
-      console.error('Order error:', err);
-      setLoading(false);
+      const waWin = window.open(waUrl, '_blank');
+      if (!waWin || waWin.closed || typeof waWin.closed === 'undefined') {
+        window.location.href = waUrl;
+      }
+    } catch (openErr) {
+      console.warn('Popup open error, using href fallback:', openErr);
+      window.location.href = waUrl;
     }
-  };
 
-  // Handle WhatsApp Order (Direct 1-step validation & WhatsApp dispatch)
-  const handleWhatsAppOrder = () => {
-    if (cartItems.length === 0) return;
-    if (!validateForm()) return;
-
-    const sanitizedCustomer = {
-      fullName: sanitizeText(fullName, 100).trim(),
-      phone: formatDZPhoneDisplay(phone),
-      phoneBackup: '',
-      wilaya: currentWilaya.name,
-      address: sanitizeText(address, 250).trim(),
-      notes: sanitizeText(notes, 250).trim()
-    };
-
-    const orderData = {
-      customer: sanitizedCustomer,
-      items: cartItems,
-      subtotal,
-      shippingFee,
-      total,
-      date: new Date().toLocaleString(lang === 'ar' ? 'ar-DZ' : 'fr-DZ')
-    };
-
-    addOrderToStorage(orderData);
-    recordOrderTimestamp();
-
-    // Send email notification to store email (EmailJS) on WhatsApp order as well
+    // 2. Dispatch background email notification without blocking UI
     sendOrderNotification({ orderData, emailConfig }).catch((err) => {
-      console.warn('Background email dispatch error on WhatsApp order:', err);
+      console.warn('Background email dispatch error:', err);
     });
 
-    const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang);
-    window.open(waUrl, '_blank');
+    setLoading(false);
 
     onOrderSuccess({
       orderData,
@@ -228,6 +194,12 @@ export default function CartDrawer({
     setAddress('');
     setNotes('');
     setErrors({});
+  };
+
+  // Handle WhatsApp Order (Direct 1-step validation & WhatsApp dispatch)
+  const handleWhatsAppOrder = (e) => {
+    e?.preventDefault?.();
+    handleSubmitOrder(e);
   };
 
   // Real-time Algerian carrier detection & phone validity
@@ -771,11 +743,17 @@ export default function CartDrawer({
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>{t.orderViaWhatsApp}</span>
               </button>
+
+              <p className="text-[11px] text-center text-slate-500 dark:text-slate-400 font-medium">
+                {lang === 'ar'
+                  ? '⚡ يتم فتح تطبيق واتساب تلقائياً عند الضغط لإرسال معلومات طلبيتكم مباشرة'
+                  : '⚡ WhatsApp s\'ouvre automatiquement pour transmettre vos coordonnées directement'}
+              </p>
             </div>
           </div>
         )}

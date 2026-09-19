@@ -84,15 +84,22 @@ export default function SuccessModal({ isOpen, onClose, data, lang = 'fr' }) {
         {/* CTAs */}
         <div className="space-y-2.5">
           {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>{t.confirmWhatsAppFast}</span>
-            </a>
+            <div className="space-y-1">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>{lang === 'ar' ? '📱 فتح محادثة واتساب (WhatsApp)' : '📱 Ouvrir la conversation WhatsApp'}</span>
+              </a>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                {lang === 'ar'
+                  ? 'تم توجيهكم تلقائياً لتطبيق واتساب. اضغط على الزر أعلاه إذا لم تفتح المحادثة.'
+                  : 'Vous avez été redirigé vers WhatsApp. Cliquez ci-dessus si la discussion ne s\'est pas ouverte.'}
+              </p>
+            </div>
           )}
 
           <button
