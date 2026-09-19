@@ -185,7 +185,7 @@ Présentation claire et soignée de l'article, ses points forts et ses atouts po
 
 🚚 Livraison : Disponible dans 58 Wilayas à domicile
 🤝 Paiement : À la réception après vérification de votre commande
-📞 Pour commander : 0663 08 50 69`;
+📞 Pour commander : 0561 70 34 16`;
 
 export const PRO_DESCRIPTION_TEMPLATE_AR = `✨ [اسم المنتج] – جودة عالية وتصميم مميز ✨
 
@@ -197,4 +197,4 @@ export const PRO_DESCRIPTION_TEMPLATE_AR = `✨ [اسم المنتج] – جود
 
 🚚 التوصيل : متوفر وسريع لباب المنزل
 🤝 الدفع : عند الاستلام بعد معاينة الطلب
-📞 للطلب والاستفسار : 0663 08 50 69`;
+📞 للطلب والاستفسار : 0561 70 34 16`;

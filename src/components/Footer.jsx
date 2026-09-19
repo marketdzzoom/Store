@@ -94,11 +94,11 @@ export default function Footer({ onCategorySelect, storePhone, recipientEmail, o
               <li className="flex items-center gap-2">
                 <PhoneCall className="w-4 h-4 text-slate-400 shrink-0" />
                 <a 
-                  href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '+213663085069').replace(/\s+/g, '')}`} 
+                  href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' && !storePhone.includes('663') ? storePhone : '+213561703416').replace(/\s+/g, '')}`} 
                   dir="ltr"
                   className="hover:text-brand-orange transition-colors font-bold text-white [direction:ltr]"
                 >
-                  <bdi dir="ltr">{formatDZPhoneDisplay(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '0663085069')}</bdi>
+                  <bdi dir="ltr">{formatDZPhoneDisplay(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' && !storePhone.includes('663') ? storePhone : '0561703416')}</bdi>
                 </a>
               </li>
             </ul>

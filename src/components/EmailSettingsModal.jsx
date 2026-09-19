@@ -7,7 +7,7 @@ export default function EmailSettingsModal({ isOpen, onClose, emailConfig, onSav
   const [templateId, setTemplateId] = useState(emailConfig.templateId || '');
   const [publicKey, setPublicKey] = useState(emailConfig.publicKey || '');
   const [recipientEmail, setRecipientEmail] = useState(emailConfig.recipientEmail || 'marketdzzoom@gmail.com');
-  const [storePhone, setStorePhone] = useState((emailConfig.storePhone && emailConfig.storePhone !== '0550000000') ? emailConfig.storePhone : '+213663085069');
+  const [storePhone, setStorePhone] = useState((emailConfig.storePhone && emailConfig.storePhone !== '0550000000' && !emailConfig.storePhone.includes('663')) ? emailConfig.storePhone : '+213561703416');
   const [formspreeEndpoint, setFormspreeEndpoint] = useState(emailConfig.formspreeEndpoint || '');
 
   const [saved, setSaved] = useState(false);
@@ -150,7 +150,7 @@ export default function EmailSettingsModal({ isOpen, onClose, emailConfig, onSav
                 type="text"
                 value={storePhone}
                 onChange={(e) => setStorePhone(e.target.value)}
-                placeholder="0550000000"
+                placeholder="0561 70 34 16"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
               />
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />

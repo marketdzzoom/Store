@@ -25,7 +25,7 @@ Livraison : Rapide et disponible directement à domicile 🚚
 Paiement : À la réception après vérification de votre commande 🤝
 
 📞 Pour commander ou pour toute information :
-0663 08 50 69`,
+0561 70 34 16`,
     descriptionAr: `✨ حذاء UGG نسائي أنيق وعصري ✨
 
 يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
@@ -41,7 +41,7 @@ Paiement : À la réception après vérification de votre commande 🤝
 • التوصيل : متوفر وسريع حتى باب المنزل 🚚
 • الدفع : عند الاستلام بعد معاينة المنتج 🤝
 
-📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0663085069`,
+📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0561 70 34 16`,
     image: "./products/ugg-1.jpg",
     images: [
       "./products/ugg-1.jpg",

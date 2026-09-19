@@ -26,13 +26,13 @@ export function normalizeDZPhone(phone) {
 }
 
 /**
- * Formats a phone number nicely for display (e.g. 0663 08 50 69)
+ * Formats a phone number nicely for display (e.g. 0561 70 34 16)
  * Protected with LTR marks and non-breaking characters to prevent Arabic RTL reversal
  */
 export function formatDZPhoneDisplay(phone) {
   const clean = normalizeDZPhone(phone);
   if (!clean || clean.length !== 10) return phone || '';
-  // Uses \u200E (Left-to-Right Mark) and non-breaking spaces to guarantee 0663 08 50 69 is never inverted in RTL
+  // Uses \u200E (Left-to-Right Mark) and non-breaking spaces to guarantee 0561 70 34 16 is never inverted in RTL
   return `\u200E${clean.slice(0, 4)}\u00A0${clean.slice(4, 6)}\u00A0${clean.slice(6, 8)}\u00A0${clean.slice(8, 10)}\u200E`;
 }
 

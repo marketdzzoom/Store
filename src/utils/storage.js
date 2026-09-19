@@ -38,7 +38,7 @@ Pointures : Du 37 au 40
 
 Livraison : Rapide et disponible directement à domicile 🚚
 Paiement : À la réception après vérification de votre commande 🤝
-📞 Pour commander ou pour toute information : 0663 08 50 69`,
+📞 Pour commander ou pour toute information : 0561 70 34 16`,
   descriptionAr: `✨ حذاء UGG نسائي أنيق وعصري ✨
 
 يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
@@ -53,7 +53,7 @@ Paiement : À la réception après vérification de votre commande 🤝
 • المقاسات المتوفرة : من 37 إلى 40
 • التوصيل : متوفر وسريع حتى باب المنزل 🚚
 • الدفع : عند الاستلام بعد معاينة المنتج 🤝
-📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0663085069`,
+📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0561 70 34 16`,
   images: [
     "./products/ugg-1.jpg",
     "./products/ugg-2.jpg",
@@ -227,7 +227,7 @@ export const DEFAULT_EMAIL_CONFIG = {
   templateId: 'template_8kqlxnb',
   publicKey: 'm2KUiibksRpDB6DOG',
   recipientEmail: 'marketdzzoom@gmail.com',
-  storePhone: '+213663085069',
+  storePhone: '+213561703416',
   formspreeEndpoint: ''
 };
 
@@ -241,13 +241,13 @@ export function getStoredEmailConfig() {
         templateId: parsed.templateId?.trim() || DEFAULT_EMAIL_CONFIG.templateId,
         publicKey: parsed.publicKey?.trim() || DEFAULT_EMAIL_CONFIG.publicKey,
         recipientEmail: parsed.recipientEmail?.trim() || DEFAULT_EMAIL_CONFIG.recipientEmail,
-        storePhone: (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00')
+        storePhone: (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00' || parsed.storePhone.includes('663'))
           ? DEFAULT_EMAIL_CONFIG.storePhone
           : parsed.storePhone,
         formspreeEndpoint: parsed.formspreeEndpoint || DEFAULT_EMAIL_CONFIG.formspreeEndpoint
       };
-      // Auto-save migrated config to prevent empty keys on mobile or laptop
-      if (!parsed.serviceId || !parsed.publicKey || !parsed.templateId || parsed.storePhone === '0550000000') {
+      // Auto-save migrated config to prevent empty keys or outdated phone on mobile/laptop
+      if (!parsed.serviceId || !parsed.publicKey || !parsed.templateId || parsed.storePhone === '0550000000' || parsed.storePhone?.includes('663')) {
         localStorage.setItem(EMAIL_CONFIG_KEY, JSON.stringify(merged));
       }
       return merged;

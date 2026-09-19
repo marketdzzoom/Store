@@ -119,13 +119,13 @@ export default function Header({
 
           <div className="flex items-center gap-4 text-slate-300 font-medium text-[11px]">
             <a 
-              href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '+213663085069').replace(/\s+/g, '')}`} 
+              href={`tel:${(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' && !storePhone.includes('663') ? storePhone : '+213561703416').replace(/\s+/g, '')}`} 
               dir="ltr"
               className="flex items-center gap-1 hover:text-brand-orange transition-colors [direction:ltr]"
               title="Appeler le service client"
             >
               <PhoneCall className="w-3 h-3 text-brand-orange shrink-0" />
-              <span>{t.clientService} <strong className="text-white [direction:ltr] [unicode-bidi:isolate]" dir="ltr"><bdi dir="ltr">{formatDZPhoneDisplay(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' ? storePhone : '0663085069')}</bdi></strong></span>
+              <span>{t.clientService} <strong className="text-white [direction:ltr] [unicode-bidi:isolate]" dir="ltr"><bdi dir="ltr">{formatDZPhoneDisplay(storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' && !storePhone.includes('663') ? storePhone : '0561703416')}</bdi></strong></span>
             </a>
           </div>
         </div>

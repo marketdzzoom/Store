@@ -53,8 +53,8 @@ export default function ProductModal({
   const [variantError, setVariantError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const activePhone = (storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00') ? storePhone : '+213663085069';
-  const phoneDisplay = formatDZPhoneDisplay(activePhone.includes('663') ? '0663085069' : activePhone);
+  const activePhone = (storePhone && storePhone !== '0550000000' && storePhone !== '0550 00 00 00' && !storePhone.includes('663')) ? storePhone : '+213561703416';
+  const phoneDisplay = formatDZPhoneDisplay(activePhone.includes('561') ? '0561703416' : activePhone);
   const sizeSelectorRef = useRef(null);
 
   const handleCopyProductLink = (e) => {

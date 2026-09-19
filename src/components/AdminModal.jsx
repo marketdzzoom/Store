@@ -1689,7 +1689,7 @@ export default function AdminModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  placeholder="Ex: ✨ [Nom de l'article] – Qualité & Élégance ✨&#10;&#10;Présentation soignée de votre produit et de ses atouts pour le client.&#10;&#10;• Caractéristique 1 : Description du point fort&#10;• Spécifications : Détails techniques ou de conception&#10;• Couleurs disponibles : Beige, Marron, Noir&#10;&#10;🚚 Livraison : Disponible dans 58 Wilayas à domicile&#10;🤝 Paiement : À la réception après vérification&#10;📞 Pour commander : 0663 08 50 69"
+                  placeholder="Ex: ✨ [Nom de l'article] – Qualité & Élégance ✨&#10;&#10;Présentation soignée de votre produit et de ses atouts pour le client.&#10;&#10;• Caractéristique 1 : Description du point fort&#10;• Spécifications : Détails techniques ou de conception&#10;• Couleurs disponibles : Beige, Marron, Noir&#10;&#10;🚚 Livraison : Disponible dans 58 Wilayas à domicile&#10;🤝 Paiement : À la réception après vérification&#10;📞 Pour commander : 0561 70 34 16"
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none font-normal leading-relaxed"
                   required
                 />
