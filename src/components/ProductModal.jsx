@@ -476,9 +476,9 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
               </div>
             </div>
 
-            {/* Multiple Image Gallery Thumbnails */}
+            {/* Multiple Image Gallery Thumbnails (Desktop / Tablet only; hidden on smartphone for clean UI) */}
             {imageList.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-center gap-2.5 overflow-x-auto no-scrollbar shrink-0 px-1 py-1">
+              <div className="hidden sm:flex mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 items-center justify-center gap-2.5 overflow-x-auto no-scrollbar shrink-0 px-1 py-1">
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
@@ -969,9 +969,9 @@ Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
             )}
           </div>
 
-          {/* Bottom Thumbnails Navigation */}
+          {/* Bottom Thumbnails Navigation (Desktop / Tablet only; hidden on smartphone) */}
           {imageList.length > 1 && (
-            <div className="flex items-center justify-center gap-2.5 sm:gap-3 py-2 z-20 overflow-x-auto max-w-full px-2 no-scrollbar">
+            <div className="hidden sm:flex items-center justify-center gap-2.5 sm:gap-3 py-2 z-20 overflow-x-auto max-w-full px-2 no-scrollbar">
               {imageList.map((img, idx) => (
                 <button
                   key={idx}

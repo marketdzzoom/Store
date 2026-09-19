@@ -393,9 +393,9 @@ export default function SpecialOfferBanner({ offer, products = [], onQuickView, 
               </span>
             </div>
 
-            {/* Thumbnail Navigation Selector */}
+            {/* Thumbnail Navigation Selector (Desktop / Tablet only; hidden on smartphone) */}
             {images.length > 1 && (
-              <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
+              <div className="hidden sm:flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
                 {images.map((img, idx) => (
                   <button
                     type="button"
