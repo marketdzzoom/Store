@@ -681,21 +681,6 @@ export default function CartDrawer({
                       </p>
                     )}
                   </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                      {t.notes}
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={200}
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={t.notesPlaceholder}
-                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none"
-                    />
-                  </div>
                 </form>
               </div>
             </>
