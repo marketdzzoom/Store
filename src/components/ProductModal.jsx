@@ -22,7 +22,7 @@ import {
   Phone,
   MessageSquare
 } from 'lucide-react';
-import { formatPrice, getProductMarketingLink, formatDZPhoneDisplay } from '../utils/formatters';
+import { formatPrice, getProductMarketingLink, formatDZPhoneDisplay, formatPhoneForWhatsApp } from '../utils/formatters';
 import { TRANSLATIONS, CATEGORY_MAP_AR } from '../data/translations';
 import { getColorStyle, getImageIndexForColor, getColorForImageIndex } from '../utils/colors';
 import ProductDescription from './ProductDescription';
@@ -69,7 +69,7 @@ export default function ProductModal({
     }
   };
 
-  // Direct WhatsApp Order with Complete Details
+  // Direct WhatsApp Order with Essential Details (Clean, no price confusion)
   const handleDirectWhatsAppOrder = (e) => {
     e?.preventDefault?.();
     const colorToUse = selectedColor || (product.colors && product.colors[0]) || 'Beige';
@@ -77,42 +77,27 @@ export default function ProductModal({
     if (!selectedSize) setSelectedSize(sizeToUse);
     if (!selectedColor) setSelectedColor(colorToUse);
 
-    const cleanPhone = activePhone.replace(/[\s\+\.-]/g, '');
-    const totalPriceFormatted = formatPrice(product.price * quantity);
+    const waPhone = formatPhoneForWhatsApp(activePhone);
     const prodTitle = (lang === 'ar' && product.titleAr) ? product.titleAr : (product.title || titleText);
 
     let message = '';
     if (lang === 'ar') {
-      message = `السلام عليكم ورحمة الله،
-أود تأكيد طلبي لمنتجكم عبر الموقع:
-✨ *${prodTitle}*
-━━━━━━━━━━━━━━
-👟 *المقاس المطلوب:* ${sizeToUse ? `*${sizeToUse}*` : 'حسب الاختيار'}
-🎨 *اللون المطلوب:* *${colorToUse}*
-🔢 *الكمية:* *${quantity}*
-💵 *السعر الإجمالي:* *${totalPriceFormatted}*
-━━━━━━━━━━━━━━
-🚚 *التوصيل:* سريع إلى المنزل (69 ولاية)
-🤝 *الدفع:* نـقـداً عند الاستلام بعد معاينة وفحص الحذاء.
+      message = `السلام عليكم، أنا مهتم بهذا الموديل وحاب نشريه:
 
-يرجى التواصل معي لتأكيد عنوان الشحن وإرسال الطلبية في أقرب وقت. وشكراً!`;
+✨ *الموديل:* ${prodTitle}
+👟 *المقاس:* ${sizeToUse}
+🎨 *اللون:* ${colorToUse}
+🔢 *الكمية:* ${quantity}`;
     } else {
-      message = `Bonjour Zoom Market Dz,
-Je souhaite commander via votre boutique :
-✨ *${prodTitle}*
-━━━━━━━━━━━━━━
-👟 *Pointure choisie :* ${sizeToUse ? `*${sizeToUse}*` : 'À préciser'}
-🎨 *Couleur choisie :* *${colorToUse}*
-🔢 *Quantité :* *${quantity}*
-💵 *Prix Total :* *${totalPriceFormatted}*
-━━━━━━━━━━━━━━
-🚚 *Livraison :* Express à domicile (69 Wilayas)
-🤝 *Paiement :* En espèces à la réception après vérification du colis.
+      message = `Bonjour, je suis intéressé par ce modèle et je souhaite l'acheter :
 
-Merci de bien vouloir me contacter pour confirmer mon adresse d'expédition !`;
+✨ *Modèle :* ${prodTitle}
+👟 *Pointure :* ${sizeToUse}
+🎨 *Couleur :* ${colorToUse}
+🔢 *Quantité :* ${quantity}`;
     }
 
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
   };
 

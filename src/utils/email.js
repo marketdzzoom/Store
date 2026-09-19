@@ -176,7 +176,7 @@ TOTAL COMMANDE : ${formatPrice(total)} DZD
  * Generate WhatsApp Order Link with Complete Order Details
  */
 export function generateWhatsAppOrderUrl(orderData, storePhone = '+213663085069', lang = 'ar') {
-  const { customer, items, subtotal, shippingFee, total } = orderData;
+  const { customer, items } = orderData;
   const isAr = lang === 'ar';
   
   const itemsList = items
@@ -186,49 +186,33 @@ export function generateWhatsAppOrderUrl(orderData, storePhone = '+213663085069'
       if (i.selectedSize) specs.push(isAr ? `المقاس: *${i.selectedSize}*` : `Pointure: *${i.selectedSize}*`);
       if (i.selectedColor) specs.push(isAr ? `اللون: *${i.selectedColor}*` : `Couleur: *${i.selectedColor}*`);
       const specsStr = specs.length > 0 ? `\n   ${specs.join(' | ')}` : '';
-      return `• *${title}*${specsStr}\n   ${isAr ? 'الكمية' : 'Qté'}: *${i.quantity}* | ${isAr ? 'السعر' : 'Prix'}: *${formatPrice(i.price * i.quantity)}*`;
+      return `• *${title}*${specsStr}\n   ${isAr ? 'الكمية' : 'Quantité'}: *${i.quantity}*`;
     })
     .join('\n\n');
 
   let text = '';
   if (isAr) {
-    text = `🛒 *طلب شراء جديد عبر الموقع - زوم ماركت ديزاد*
+    text = `السلام عليكم، أنا مهتم بهذا الموديل وحاب نشريه:
 
-👤 *الاسم واللقب:* ${customer.fullName}
-📞 *رقم الهاتف:* ${customer.phone}${customer.phoneBackup ? ` (احتياطي: ${customer.phoneBackup})` : ''}
-📍 *ولاية التوصيل:* ${customer.wilaya}
-🏠 *البلدية والعنوان:* ${customer.address}
-${customer.notes ? `📝 *ملاحظات:* ${customer.notes}\n` : ''}
-━━━━━━━━━━━━━━━━━━
-📦 *تفاصيل المنتجات المطلوبة:*
+✨ *تفاصيل الطلبية:*
 ${itemsList}
-━━━━━━━━━━━━━━━━━━
-💰 *المجموع الفرعي:* ${formatPrice(subtotal)}
-🚚 *مصاريف التوصيل:* ${formatPrice(shippingFee)}
-💵 *المبلغ الإجمالي عند الاستلام:* *${formatPrice(total)}*
 
-🤝 *طريقة الاستلام والدفع:*
-توصيل سريع حتى باب المنزل مع إمكانية معاينة وفحص الحذاء قبل الدفع نقداً.
-يرجى تأكيد إرسال الطلبية وشكراً!`;
+👤 *معلومات التوصيل:*
+• الاسم: ${customer?.fullName || ''}
+• الهاتف: ${customer?.phone || ''}${customer?.phoneBackup ? ` (${customer.phoneBackup})` : ''}
+• ولاية: ${customer?.wilaya || ''}
+• البلدية / العنوان: ${customer?.address || ''}${customer?.notes ? `\n• ملاحظات: ${customer.notes}` : ''}`;
   } else {
-    text = `🛒 *NOUVELLE COMMANDE - ZOOM MARKET DZ*
+    text = `Bonjour, je suis intéressé par ce modèle et je souhaite l'acheter :
 
-👤 *Nom & Prénom :* ${customer.fullName}
-📞 *Tél :* ${customer.phone}${customer.phoneBackup ? ` (Secours: ${customer.phoneBackup})` : ''}
-📍 *Wilaya :* ${customer.wilaya}
-🏠 *Commune & Adresse :* ${customer.address}
-${customer.notes ? `📝 *Notes :* ${customer.notes}\n` : ''}
-━━━━━━━━━━━━━━━━━━
-📦 *Détail des Articles Commandés :*
+✨ *Détails de la commande :*
 ${itemsList}
-━━━━━━━━━━━━━━━━━━
-💰 *Sous-total :* ${formatPrice(subtotal)}
-🚚 *Frais de Livraison :* ${formatPrice(shippingFee)}
-💵 *TOTAL À PAYER À LA RÉCEPTION :* *${formatPrice(total)}*
 
-🤝 *Paiement & Livraison :*
-Livraison à domicile et paiement en espèces après vérification du colis.
-Merci de bien vouloir confirmer l'expédition de ma commande !`;
+👤 *Informations de livraison :*
+• Nom : ${customer?.fullName || ''}
+• Tél : ${customer?.phone || ''}${customer?.phoneBackup ? ` (${customer.phoneBackup})` : ''}
+• Wilaya : ${customer?.wilaya || ''}
+• Commune / Adresse : ${customer?.address || ''}${customer?.notes ? `\n• Notes : ${customer.notes}` : ''}`;
   }
 
   const encodedText = encodeURIComponent(text);
