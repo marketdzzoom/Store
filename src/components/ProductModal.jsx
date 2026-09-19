@@ -733,20 +733,6 @@ export default function ProductModal({
                   </div>
                 </div>
               )}
-
-              {/* Discreet Admin Footer Link */}
-              <div className="pt-4 mt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
-                <span>Zoom Market Dz © {new Date().getFullYear()}</span>
-                <button
-                  type="button"
-                  onClick={isAdminLoggedIn ? onOpenAdmin : onOpenAdminLogin}
-                  className="hover:text-brand-orange text-slate-400 dark:text-slate-500 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
-                  title="Accès Administrateur"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{isAdminLoggedIn ? (lang === 'ar' ? 'لوحة التحكم (متصل)' : 'Admin (Connecté)') : (lang === 'ar' ? 'دخول المشرف 🔒' : 'Espace Admin 🔒')}</span>
-                </button>
-              </div>
             </div>
 
             {/* Desktop Sticky Action CTAs Footer - Always pinned and visible with Professional Guarantee Bar */}
