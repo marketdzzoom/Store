@@ -97,8 +97,17 @@ export default function ProductModal({
 🔢 *Quantité :* ${quantity}`;
     }
 
-    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
+    const encoded = encodeURIComponent(message);
+    const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const waUrl = isMobile 
+      ? `whatsapp://send?phone=${waPhone}&text=${encoded}`
+      : `https://api.whatsapp.com/send?phone=${waPhone}&text=${encoded}`;
+
+    if (isMobile) {
+      window.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank');
+    }
   };
 
   // HD Interactive Zoom States

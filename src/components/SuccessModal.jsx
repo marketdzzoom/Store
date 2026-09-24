@@ -82,23 +82,27 @@ export default function SuccessModal({ isOpen, onClose, data, lang = 'fr' }) {
         </div>
 
         {/* CTAs */}
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {whatsappUrl && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <a
                 href={whatsappUrl}
-                target="_blank"
+                target={typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? '_self' : '_blank'}
                 rel="noopener noreferrer"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 fill-current" />
                 <span>{lang === 'ar' ? '📱 فتح محادثة واتساب (WhatsApp)' : '📱 Ouvrir la conversation WhatsApp'}</span>
               </a>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                {lang === 'ar'
-                  ? 'تم توجيهكم تلقائياً لتطبيق واتساب. اضغط على الزر أعلاه إذا لم تفتح المحادثة.'
-                  : 'Vous avez été redirigé vers WhatsApp. Cliquez ci-dessus si la discussion ne s\'est pas ouverte.'}
-              </p>
+
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-left flex items-start gap-2.5">
+                <span className="text-emerald-600 dark:text-emerald-400 text-sm leading-none mt-0.5 animate-pulse">🟢</span>
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
+                  {lang === 'ar'
+                    ? 'تنبيه: عند فتح تطبيق واتساب، يرجى الضغط على زر الإرسال الأخضر (▶) لإرسال معلومات طلبيتكم للبائع مباشرة!'
+                    : 'Remarque : Une fois WhatsApp ouvert, appuyez simplement sur la flèche verte d\'envoi (▶) pour transmettre votre commande !'}
+                </p>
+              </div>
             </div>
           )}
 

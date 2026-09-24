@@ -234,5 +234,11 @@ ${customerFormatted ? `\n━━━━━━━━━━━━━━\n${customerF
 
   const encodedText = encodeURIComponent(text);
   const formattedPhone = formatPhoneForWhatsApp(storePhone);
-  return `https://wa.me/${formattedPhone}?text=${encodedText}`;
+  
+  // On mobile devices, whatsapp://send opens native WhatsApp app directly without intermediate web landing page
+  const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    return `whatsapp://send?phone=${formattedPhone}&text=${encodedText}`;
+  }
+  return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedText}`;
 }

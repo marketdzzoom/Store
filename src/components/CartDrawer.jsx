@@ -28,6 +28,7 @@ import {
 import { sendOrderNotification, generateWhatsAppOrderUrl } from '../utils/email';
 import { TRANSLATIONS } from '../data/translations';
 import { addOrderToStorage } from '../utils/storage';
+import { pushSingleOrderToCloud } from '../utils/cloudSync';
 import { 
   sanitizeText, 
   sanitizePhone, 
@@ -164,13 +165,23 @@ export default function CartDrawer({
     addOrderToStorage(orderData);
     recordOrderTimestamp();
 
+    // Auto-sync order to Cloud/Firebase in background (instant cross-device sync)
+    pushSingleOrderToCloud(orderData).catch((err) => {
+      console.warn('Cloud order push error:', err);
+    });
+
     const waUrl = generateWhatsAppOrderUrl(orderData, emailConfig.storePhone, lang);
 
     // 1. Systematic immediate dispatch to WhatsApp with all customer coordinates & order details
     try {
-      const waWin = window.open(waUrl, '_blank');
-      if (!waWin || waWin.closed || typeof waWin.closed === 'undefined') {
+      const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
         window.location.href = waUrl;
+      } else {
+        const waWin = window.open(waUrl, '_blank');
+        if (!waWin || waWin.closed || typeof waWin.closed === 'undefined') {
+          window.location.href = waUrl;
+        }
       }
     } catch (openErr) {
       console.warn('Popup open error, using href fallback:', openErr);
