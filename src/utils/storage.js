@@ -11,7 +11,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.09.25-v15-price-4900';
+const CURRENT_CATALOG_VERSION = '2026.11.14-v16-price-3500-tel-0663085069';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -20,7 +20,7 @@ export const DEFAULT_SPECIAL_OFFER = {
   seasonBadge: "وصول حصري للموسم",
   title: "Chaussures UGG",
   titleAr: "حذاء UGG نسائي أنيق وعصري",
-  price: 4900,
+  price: 3500,
   oldPrice: 7500,
   category: "Mode & Habillement",
   description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨
@@ -38,7 +38,7 @@ Pointures : Du 37 au 40
 
 Livraison : Rapide et disponible directement à domicile 🚚
 Paiement : À la réception après vérification de votre commande 🤝
-📞 Pour commander ou pour toute information : 0561 70 34 16`,
+📞 Pour commander ou pour toute information : 0663 08 50 69`,
   descriptionAr: `✨ حذاء UGG نسائي أنيق وعصري ✨
 
 يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
@@ -53,7 +53,7 @@ Paiement : À la réception après vérification de votre commande 🤝
 • المقاسات المتوفرة : من 37 إلى 40
 • التوصيل : متوفر وسريع حتى باب المنزل 🚚
 • الدفع : عند الاستلام بعد معاينة المنتج 🤝
-📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0561 70 34 16`,
+📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0663 08 50 69`,
   images: [
     "./products/ugg-1.jpg",
     "./products/ugg-2.jpg",
@@ -227,7 +227,7 @@ export const DEFAULT_EMAIL_CONFIG = {
   templateId: 'template_8kqlxnb',
   publicKey: 'm2KUiibksRpDB6DOG',
   recipientEmail: 'marketdzzoom@gmail.com',
-  storePhone: '+213561703416',
+  storePhone: '+213663085069',
   formspreeEndpoint: ''
 };
 
@@ -241,13 +241,13 @@ export function getStoredEmailConfig() {
         templateId: parsed.templateId?.trim() || DEFAULT_EMAIL_CONFIG.templateId,
         publicKey: parsed.publicKey?.trim() || DEFAULT_EMAIL_CONFIG.publicKey,
         recipientEmail: parsed.recipientEmail?.trim() || DEFAULT_EMAIL_CONFIG.recipientEmail,
-        storePhone: (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00' || parsed.storePhone.includes('663'))
+        storePhone: (!parsed.storePhone || parsed.storePhone === '0550000000' || parsed.storePhone === '0550 00 00 00' || parsed.storePhone.includes('561703416') || parsed.storePhone.includes('561 70 34 16') || parsed.storePhone === '+213561703416' || parsed.storePhone === '0561703416')
           ? DEFAULT_EMAIL_CONFIG.storePhone
           : parsed.storePhone,
         formspreeEndpoint: parsed.formspreeEndpoint || DEFAULT_EMAIL_CONFIG.formspreeEndpoint
       };
       // Auto-save migrated config to prevent empty keys or outdated phone on mobile/laptop
-      if (!parsed.serviceId || !parsed.publicKey || !parsed.templateId || parsed.storePhone === '0550000000' || parsed.storePhone?.includes('663')) {
+      if (!parsed.serviceId || !parsed.publicKey || !parsed.templateId || parsed.storePhone === '0550000000' || parsed.storePhone?.includes('561')) {
         localStorage.setItem(EMAIL_CONFIG_KEY, JSON.stringify(merged));
       }
       return merged;

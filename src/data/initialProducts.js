@@ -3,7 +3,7 @@ export const INITIAL_PRODUCTS = [
     id: "prod-ugg",
     title: "Chaussures UGG",
     titleAr: "حذاء UGG نسائي أنيق وعصري",
-    price: 4900,
+    price: 3500,
     oldPrice: 7500,
     category: "Mode & Habillement",
     badge: "Offre Spéciale",
@@ -25,7 +25,7 @@ Livraison : Rapide et disponible directement à domicile 🚚
 Paiement : À la réception après vérification de votre commande 🤝
 
 📞 Pour commander ou pour toute information :
-0561 70 34 16`,
+0663 08 50 69`,
     descriptionAr: `✨ حذاء UGG نسائي أنيق وعصري ✨
 
 يجمع بين الراحة الفائقة، المظهر العصري الجذاب، والدفء المثالي لإطلالتك اليومية.
@@ -41,7 +41,7 @@ Paiement : À la réception après vérification de votre commande 🤝
 • التوصيل : متوفر وسريع حتى باب المنزل 🚚
 • الدفع : عند الاستلام بعد معاينة المنتج 🤝
 
-📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0561 70 34 16`,
+📞 للطلب والاستفسار، يرجى الاتصال أو إرسال رسالة عبر واتساب: 0663 08 50 69`,
     image: "./products/ugg-1.jpg",
     images: [
       "./products/ugg-1.jpg",
