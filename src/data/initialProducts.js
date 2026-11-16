@@ -3,7 +3,7 @@ export const INITIAL_PRODUCTS = [
     id: "prod-ugg",
     title: "Chaussures UGG",
     titleAr: "حذاء UGG نسائي أنيق وعصري",
-    price: 3500,
+    price: 3900,
     oldPrice: 7500,
     category: "Mode & Habillement",
     badge: "Offre Spéciale",

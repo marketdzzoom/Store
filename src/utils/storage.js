@@ -11,7 +11,7 @@ const EMAIL_CONFIG_KEY = 'zoom_market_email_config_v1';
 const SPECIAL_OFFER_KEY = 'zoom_market_special_offer_v1';
 const ORDERS_KEY = 'zoom_market_orders_v1';
 const CATALOG_BUILD_VERSION_KEY = 'zoom_market_catalog_version_v1';
-const CURRENT_CATALOG_VERSION = '2026.11.14-v16-price-3500-tel-0663085069';
+const CURRENT_CATALOG_VERSION = '2026.11.16-v17-price-3900-tel-0663085069';
 
 // Default Initial Special Offer
 export const DEFAULT_SPECIAL_OFFER = {
@@ -20,7 +20,7 @@ export const DEFAULT_SPECIAL_OFFER = {
   seasonBadge: "وصول حصري للموسم",
   title: "Chaussures UGG",
   titleAr: "حذاء UGG نسائي أنيق وعصري",
-  price: 3500,
+  price: 3900,
   oldPrice: 7500,
   category: "Mode & Habillement",
   description: `✨ Chaussures UGG pour femme – Élégance & Confort Moderne ✨

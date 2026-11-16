@@ -132,7 +132,7 @@ export default function AdminModal({
   const [manualSize, setManualSize] = useState('38');
   const [manualColor, setManualColor] = useState('Beige');
   const [manualQuantity, setManualQuantity] = useState(1);
-  const [manualPrice, setManualPrice] = useState(3500);
+  const [manualPrice, setManualPrice] = useState(3900);
   const [manualShipping, setManualShipping] = useState(400);
   const [manualStatus, setManualStatus] = useState('En attente');
   const [manualNotes, setManualNotes] = useState('');
@@ -478,7 +478,7 @@ export default function AdminModal({
       return;
     }
 
-    const priceNum = Number(manualPrice) || 3500;
+    const priceNum = Number(manualPrice) || 3900;
     const qtyNum = Number(manualQuantity) || 1;
     const shippingNum = Number(manualShipping) || 0;
     const defaultProductTitle = products[0]?.title || 'تصميم UGG طبي أصلي';
